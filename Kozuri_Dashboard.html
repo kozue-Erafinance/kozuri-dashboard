@@ -81,9 +81,9 @@ tr:last-child td{border-bottom:none;}
 .num-cell{text-align:right; font-variant-numeric:tabular-nums;}
 .chg-up{color:var(--up); font-weight:600;} .chg-down{color:var(--down); font-weight:600;}
 
-.rank-bar-row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; padding:1.25px 0; line-height:1.15;}
+.rank-bar-row{display:grid; grid-template-columns:150px 1fr 78px; align-items:center; gap:8px; padding:1.25px 0; line-height:1.15;}
 .rank-name{font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.rank-track{grid-column:1/3; background:#f0ede4; border-radius:4px; height:8px; position:relative; margin-top:1px;}
+.rank-track{background:#f0ede4; border-radius:4px; height:8px; position:relative;}
 .rank-fill{height:100%; border-radius:4px;}
 .rank-fill.ctw{background:linear-gradient(90deg,#274873,#4169a3);}
 .rank-fill.tl{background:linear-gradient(90deg,#c9a961,#e0c383);}
@@ -92,6 +92,14 @@ tr:last-child td{border-bottom:none;}
 .sub-fill.shift-tl{background:linear-gradient(90deg,#c9a961,#e0c383);}
 .sub-fill.shift-ctw{background:linear-gradient(90deg,#274873,#4169a3);}
 .rank-qty{font-size:12px; color:var(--ink-soft); font-weight:600; min-width:34px; text-align:right;}
+
+.top-n-tabs{display:flex; gap:6px; margin-bottom:14px;}
+.top-n-btn{
+  font-family:'Sarabun',sans-serif; font-size:12.5px; font-weight:600; color:var(--ink-soft);
+  background:#fff; border:1px solid var(--line); border-radius:999px; padding:6px 16px; cursor:pointer; transition:.12s;
+}
+.top-n-btn:hover{border-color:var(--gold-500); color:var(--navy-900);}
+.top-n-btn.active{background:var(--navy-900); border-color:var(--navy-900); color:#fff;}
 .empty-note{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
 
 .sub-callout{
@@ -100,10 +108,10 @@ tr:last-child td{border-bottom:none;}
 }
 .sub-callout .big-num{font-size:26px; font-weight:700; color:var(--navy-950); white-space:nowrap;}
 .sub-callout .txt{font-size:13px; color:var(--ink-soft); line-height:1.45;}
-.sub-row{display:grid; grid-template-columns:120px 1fr 60px 70px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
+.sub-row{display:grid; grid-template-columns:130px 1fr 65px 170px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
 .sub-row:last-child{border-bottom:none;}
 .sub-row .name{font-size:13px; font-weight:600; color:var(--ink);}
-.sub-row .qty-chg{font-size:12px; color:var(--down); font-weight:600; text-align:right;}
+.sub-row .qty-chg{font-size:12px; font-weight:600; text-align:right;}
 .sub-track{background:#f0ede4; border-radius:5px; height:14px; position:relative; overflow:hidden;}
 .sub-fill{height:100%; background:linear-gradient(90deg,#c9a961,#e0c383); display:flex; align-items:center; justify-content:flex-end; padding-right:6px;}
 .sub-fill span{font-size:10.5px; color:#5a4419; font-weight:700;}
@@ -203,7 +211,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <div class="chart-box tall"><canvas id="chartMonthlySales"></canvas></div>
       </div>
       <div class="card">
-        <h3><span class="dot ctw"></span><span class="dot tl" style="margin-left:10px"></span> จำนวนชุด SET/ROLLS ที่ขายได้ต่อเดือน</h3>
+        <h3><span class="dot ctw"></span><span class="dot tl" style="margin-left:10px"></span> จำนวน Set (SET/ROLLS) ที่ขายได้ต่อเดือน</h3>
         <div class="chart-box tall"><canvas id="chartSetQty"></canvas></div>
       </div>
     </div>
@@ -211,7 +219,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
     <div class="section-title"><span class="num">02</span><h2>Qty Sold ตาม ROLLS — <span id="rollsMonthLabel"></span> เทียบเดือนก่อน</h2><span class="rule"></span></div>
     <div class="grid-2b">
       <div class="card">
-        <h3><span class="dot tl"></span> Thonglor <span class="dot ctw" style="margin-left:10px"></span> CTW — จำนวนที่ขายได้ (ชุด)</h3>
+        <h3><span class="dot tl"></span> Thonglor <span class="dot ctw" style="margin-left:10px"></span> CTW — จำนวนที่ขายได้ (Set)</h3>
         <div class="chart-box tall" style="height:320px;"><canvas id="chartRollsBar"></canvas></div>
       </div>
       <div class="card">
@@ -225,7 +233,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
       <b style="color:var(--navy-900);">วิธีวิเคราะห์ (Share Shift Analysis):</b> เทียบ <b>สัดส่วน (%share)</b> ของ SET แต่ละแบบในยอดขาย ROLLS ทั้งหมด ระหว่าง
       <b style="color:var(--navy-900);">ฐาน (เฉลี่ย ก.พ.–เม.ย.</b> ก่อนมี Seasonal) กับ <b style="color:var(--navy-900);">มิ.ย. (เดือนแรกที่ขายเต็มเดือนหลังเปิดตัว)</b>
       — <b>ไม่รวม พ.ค.</b> ในการคำนวณ เพราะเป็นเดือนเปิดตัว (Launch Month) ขายได้แค่ 14 วัน ตัวเลขจะไม่ยุติธรรม (แต่ยังโชว์ในกราฟแนวโน้มด้านล่างเพื่อดูบริบท)<br>
-      ส่วนต่าง %share ถูกแปลงกลับเป็น "จำนวนชุดที่ย้าย" (โดยคูณกับยอดรวม ROLLS ของเดือน มิ.ย.) แล้วคูณราคาต่อชุดเพื่อดูผลกระทบต่อรายได้ — ราคาที่ใช้: Seasonal Set ฿1,190 · 4 ROLLs ฿590 · 5 ROLLs ฿790 · 6 ROLLs ฿990 · 7 ROLLs ฿1,290
+      ส่วนต่าง %share ถูกแปลงกลับเป็น "จำนวน Set ที่ย้าย" (โดยคูณกับยอดรวม ROLLS ของเดือน มิ.ย.) แล้วคูณราคาต่อ Set เพื่อดูผลกระทบต่อรายได้ — ราคาที่ใช้: Seasonal Set ฿1,190 · 4 ROLLs ฿590 · 5 ROLLs ฿790 · 6 ROLLs ฿990 · 7 ROLLs ฿1,290
     </div>
     <div class="grid-2b">
       <div class="card">
@@ -251,6 +259,11 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
     </div>
 
     <div class="section-title"><span class="num">03</span><h2>เมนูขายดี — A La Carte &amp; เครื่องดื่ม (<span id="topMonthLabel"></span>)</h2><span class="rule"></span></div>
+    <div class="top-n-tabs">
+      <button class="top-n-btn" data-n="5">Top 5</button>
+      <button class="top-n-btn" data-n="10">Top 10</button>
+      <button class="top-n-btn active" data-n="all">ALL</button>
+    </div>
     <div class="grid-2b">
       <div class="card"><h3><span class="dot tl"></span> A La Carte — Thonglor</h3><div style="max-height:420px; overflow:auto;" id="rankAlcTL"></div></div>
       <div class="card"><h3><span class="dot ctw"></span> A La Carte — CTW</h3><div style="max-height:420px; overflow:auto;" id="rankAlcCTW"></div></div>
@@ -639,31 +652,26 @@ function buildShareShiftForBranch(elId, branch, colorClass){
     return `<div class="sub-row">
       <div class="name">${r.type} <span class="price-tag">฿${fmtNum(r.price)}</span></div>
       <div class="sub-track"><div class="sub-fill shift-${barColor}" style="width:${barPct}%; margin-left:${up?'0':'auto'}"><span>${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp</span></div></div>
-      <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} ชุด</div>
-      <div class="sub-pct">${r.baseline_share}%→${r.june_share}%</div>
+      <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set</div>
+      <div class="sub-pct">(${fmtNum(r.baseline_avg_qty)} Set) ${r.baseline_share}% → (${fmtNum(r.june_qty)} Set) ${r.june_share}%</div>
     </div>`;
   }).join('');
 
   const isGood = a.net_impact >= 0;
-  const sevenRow = a.rows.find(r=>r.type==='7 ROLLs');
-  const sevenNote = sevenRow
-    ? `7 ROLLs เสียส่วนแบ่งไป ${Math.abs(sevenRow.share_shift_pp)}pp (จาก ${sevenRow.baseline_share}% เหลือ ${sevenRow.june_share}%) คิดเป็นประมาณ ${Math.abs(sevenRow.qty_shift).toFixed(1)} ชุด เสียรายได้ส่วนนี้ไป ~฿${fmtNum(Math.abs(sevenRow.revenue_impact))} `
-    : '';
   const revTableId = 'revTable' + (colorClass==='tl' ? 'TL' : 'CTW');
 
   el.innerHTML = `
     <div class="sub-callout">
-      <div class="big-num">${a.june_total} ชุด</div>
-      <div class="txt">ยอด ROLLS รวมเดือน มิ.ย. เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} ชุด/เดือน) — แท่งขวา = ส่วนแบ่งเพิ่มขึ้น, แท่งซ้าย = ส่วนแบ่งลดลง เทียบเป็น pp (percentage point)</div>
+      <div class="big-num">${a.june_total} Set</div>
+      <div class="txt">ยอด ROLLS รวมเดือน มิ.ย. เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — แท่งขวา = ส่วนแบ่งเพิ่มขึ้น, แท่งซ้าย = ส่วนแบ่งลดลง เทียบเป็น pp (percentage point)</div>
     </div>
     ${rowsHtml}
-    <div class="sub-caption">* Qty shift = ส่วนต่าง %share × ยอดรวม ROLLS เดือน มิ.ย. (${a.june_total} ชุด) — ผลรวม Qty shift ของทุก SET จะเท่ากับ 0 เสมอ (เป็นการแจกแจงส่วนแบ่งที่เปลี่ยนไป ไม่ใช่แค่ของ Seasonal ฝ่ายเดียว)</div>
+    <div class="sub-caption">* Qty shift = ส่วนต่าง %share × ยอดรวม ROLLS เดือน มิ.ย. (${a.june_total} Set) — ผลรวม Qty shift ของทุก SET จะเท่ากับ 0 เสมอ (เป็นการแจกแจงส่วนแบ่งที่เปลี่ยนไป ไม่ใช่แค่ของ Seasonal ฝ่ายเดียว)</div>
 
     <div class="rev-verdict ${isGood?'good':'bad'}">
       <div class="rv-num">${isGood?'+':'-'}฿${fmtNum(Math.abs(a.net_impact))}</div>
       <div class="rv-txt">
-        <b>${isGood? 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้เพิ่มขึ้น' : 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้ลดลง'}</b> ประมาณ ฿${fmtNum(Math.abs(a.net_impact))}/เดือน (คำนวณที่ยอดรวมระดับเดียวกับ มิ.ย. เพื่อแยกผลจาก "เปลี่ยนสัดส่วน" ออกจากผลของ "ยอดรวมเปลี่ยน")<br>
-        ${sevenNote}${isGood? 'แต่ 4/5 ROLLs และ Seasonal ที่ได้ส่วนแบ่งเพิ่มมีมูลค่ารวมมากกว่า จึงยังคุ้มในภาพรวม' : 'และ Seasonal ที่ได้ส่วนแบ่งเพิ่มมายังไม่มากพอจะชดเชยส่วนที่เสียไปจาก 6/7 ROLLs'}
+        <b>${isGood? 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้เพิ่มขึ้น' : 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้ลดลง'}</b> ประมาณ ฿${fmtNum(Math.abs(a.net_impact))}/เดือน (คำนวณที่ยอดรวมระดับเดียวกับ มิ.ย. เพื่อแยกผลจาก "เปลี่ยนสัดส่วน" ออกจากผลของ "ยอดรวมเปลี่ยน")
       </div>
     </div>
     <table class="rev-table" id="${revTableId}"></table>
@@ -693,6 +701,7 @@ function buildShareShiftForBranch(elId, branch, colorClass){
   renderSortableTable(revTableId, revHeaders, a.rows, revFormatRow, 6, 'asc', footerHtml);
 }
 
+let topNFilter = 'all';
 function buildTopItems(m){
   document.getElementById('topMonthLabel').textContent = MON_LABELS[m] + ' 2026';
   rankList('rankAlcTL', DATA.top_alc_by_month.Thonglor[m]||[], 'tl');
@@ -700,18 +709,27 @@ function buildTopItems(m){
   rankList('rankBevTL', DATA.top_bev_by_month.Thonglor[m]||[], 'tl');
   rankList('rankBevCTW', DATA.top_bev_by_month.CTW[m]||[], 'ctw');
 }
-function rankList(id, rows, colorClass){
+function rankList(id, allRows, colorClass){
+  const rows = topNFilter==='all' ? allRows : allRows.slice(0, parseInt(topNFilter));
   if(!rows.length){ document.getElementById(id).innerHTML = '<div class="empty-note">ไม่มีข้อมูลเดือนนี้</div>'; return; }
   const max = Math.max(...rows.map(r=>r[1]));
   document.getElementById(id).innerHTML = rows.map(r=>{
-    const pct = (r[1]/max*100).toFixed(1);
+    const pct = (r[1]/max*100).toFixed(0);
     return `<div class="rank-bar-row">
       <div class="rank-name">${r[0]}</div>
-      <div class="rank-qty">${fmtNum(r[1])}</div>
       <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${pct}%"></div></div>
+      <div class="rank-qty">${fmtNum(r[1])} <span style="font-weight:400; color:var(--ink-soft);">(${pct}%)</span></div>
     </div>`;
   }).join('');
 }
+document.querySelectorAll('.top-n-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.top-n-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    topNFilter = btn.dataset.n;
+    if(DATA) buildTopItems(currentMonth);
+  });
+});
 
 // ---------- Yield / Cost gap (depends on month) ----------
 function buildYield(m){
@@ -839,7 +857,7 @@ function toMonthNum(v){
 //   ELSE: รหัส itself (unchanged)
 function categorizeCode(codeRaw){
   const c = (codeRaw||'').toLowerCase().trim();
-  if(c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('drinks') || c.startsWith('sake')) return 'Drinks';
+  if(c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('drinks') || c.startsWith('sake') || c.startsWith('sm') || c.startsWith('smoothie')) return 'Drinks';
   if(c.startsWith('pr1') || c.startsWith('r1') || c.startsWith('sp')) return 'A La Carte';
   return codeRaw;
 }
