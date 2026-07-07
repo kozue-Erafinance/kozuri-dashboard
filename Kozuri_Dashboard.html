@@ -108,8 +108,8 @@ tr:last-child td{border-bottom:none;}
 }
 .sub-callout .big-num{font-size:26px; font-weight:700; color:var(--navy-950); white-space:nowrap;}
 .sub-callout .txt{font-size:13px; color:var(--ink-soft); line-height:1.45;}
-.sub-rows-wrap{overflow-x:auto;}
-.sub-row{display:grid; grid-template-columns:150px 240px 90px 220px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); min-width:730px; white-space:nowrap;}
+.sub-rows-wrap{overflow-x:visible;}
+.sub-row{display:grid; grid-template-columns:130px minmax(180px,240px) 1fr; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
 .sub-row:last-child{border-bottom:none;}
 .sub-row .name{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .sub-row .qty-chg{font-size:12px; font-weight:600; text-align:right; white-space:nowrap;}
@@ -658,9 +658,8 @@ function buildShareShiftForBranch(elId, branch, colorClass){
       : `<div class="sub-fill-diverge neg" style="width:${halfWidthPct}%;" title="${r.share_shift_pp}pp"></div>`;
     const barLabel = `${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set / ${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}%`;
     return `<div class="sub-row">
-      <div class="name">${r.type} <span class="price-tag">฿${fmtNum(r.price)}</span></div>
+      <div class="name">${r.type}</div>
       <div class="sub-pct">(${fmtNum(r.baseline_avg_qty)} Set) ${r.baseline_share}% → (${fmtNum(r.june_qty)} Set) ${r.june_share}%</div>
-      <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set</div>
       <div class="bar-cell">
         <div class="bar-label ${up?'chg-up':'chg-down'}">${barLabel}</div>
         <div class="sub-track-diverge"><div class="center-line"></div>${fillDiv}</div>
