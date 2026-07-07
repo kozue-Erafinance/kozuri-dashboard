@@ -108,15 +108,18 @@ tr:last-child td{border-bottom:none;}
 }
 .sub-callout .big-num{font-size:26px; font-weight:700; color:var(--navy-950); white-space:nowrap;}
 .sub-callout .txt{font-size:13px; color:var(--ink-soft); line-height:1.45;}
-.sub-row{display:grid; grid-template-columns:130px 1fr 65px 170px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line);}
+.sub-rows-wrap{overflow-x:auto;}
+.sub-row{display:grid; grid-template-columns:150px 240px 90px 130px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); min-width:640px; white-space:nowrap;}
 .sub-row:last-child{border-bottom:none;}
-.sub-row .name{font-size:13px; font-weight:600; color:var(--ink);}
-.sub-row .qty-chg{font-size:12px; font-weight:600; text-align:right;}
-.sub-track{background:#f0ede4; border-radius:5px; height:14px; position:relative; overflow:hidden;}
-.sub-fill{height:100%; background:linear-gradient(90deg,#c9a961,#e0c383); display:flex; align-items:center; justify-content:flex-end; padding-right:6px;}
-.sub-fill span{font-size:10.5px; color:#5a4419; font-weight:700;}
-.sub-pct{font-size:13px; font-weight:700; color:#8a6d2a; text-align:right;}
-.sub-caption{font-size:11.5px; color:var(--ink-soft); margin-top:10px; font-style:italic;}
+.sub-row .name{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.sub-row .qty-chg{font-size:12px; font-weight:600; text-align:right; white-space:nowrap;}
+.sub-track-diverge{position:relative; height:14px; background:#f0ede4; border-radius:5px; overflow:hidden;}
+.sub-track-diverge .center-line{position:absolute; left:50%; top:0; bottom:0; width:2px; background:#c9c3b0; transform:translateX(-1px); z-index:1;}
+.sub-fill-diverge{position:absolute; top:0; height:100%;}
+.sub-fill-diverge.pos{left:50%; background:linear-gradient(90deg,#1e7d4a,#3fae72);}
+.sub-fill-diverge.neg{right:50%; background:linear-gradient(90deg,#d1685f,#b3423a);}
+.sub-pct{font-size:12.5px; font-weight:700; color:#8a6d2a; text-align:left; white-space:nowrap;}
+.sub-caption{font-size:11.5px; color:var(--ink-soft); margin-top:10px; font-style:italic; white-space:normal;}
 
 .rev-verdict{
   display:flex; align-items:center; gap:16px; border-radius:12px; padding:16px 18px; margin:16px 0 14px;
@@ -645,15 +648,16 @@ function buildShareShiftForBranch(elId, branch, colorClass){
   const maxAbsShift = Math.max(...rows.map(r=>Math.abs(r.share_shift_pp)));
 
   const rowsHtml = rows.map(r=>{
-    const isSeasonal = r.type==='Seasonal 6 ROLLs';
     const up = r.share_shift_pp >= 0;
-    const barPct = (Math.abs(r.share_shift_pp)/maxAbsShift*100).toFixed(1);
-    const barColor = isSeasonal ? (colorClass==='tl'?'tl':'ctw') : (up?'up':'down');
+    const halfWidthPct = (Math.abs(r.share_shift_pp)/maxAbsShift*50).toFixed(1);
+    const fillDiv = up
+      ? `<div class="sub-fill-diverge pos" style="width:${halfWidthPct}%;" title="${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp"></div>`
+      : `<div class="sub-fill-diverge neg" style="width:${halfWidthPct}%;" title="${r.share_shift_pp}pp"></div>`;
     return `<div class="sub-row">
       <div class="name">${r.type} <span class="price-tag">฿${fmtNum(r.price)}</span></div>
-      <div class="sub-track"><div class="sub-fill shift-${barColor}" style="width:${barPct}%; margin-left:${up?'0':'auto'}"><span>${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp</span></div></div>
-      <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set</div>
       <div class="sub-pct">(${fmtNum(r.baseline_avg_qty)} Set) ${r.baseline_share}% → (${fmtNum(r.june_qty)} Set) ${r.june_share}%</div>
+      <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set</div>
+      <div class="sub-track-diverge"><div class="center-line"></div>${fillDiv}</div>
     </div>`;
   }).join('');
 
@@ -663,9 +667,11 @@ function buildShareShiftForBranch(elId, branch, colorClass){
   el.innerHTML = `
     <div class="sub-callout">
       <div class="big-num">${a.june_total} Set</div>
-      <div class="txt">ยอด ROLLS รวมเดือน มิ.ย. เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — แท่งขวา = ส่วนแบ่งเพิ่มขึ้น, แท่งซ้าย = ส่วนแบ่งลดลง เทียบเป็น pp (percentage point)</div>
+      <div class="txt">ยอด ROLLS รวมเดือน มิ.ย. เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — บาร์ขวา+เขียว = ส่วนแบ่งเพิ่มขึ้น, บาร์ซ้าย+แดง = ส่วนแบ่งลดลง (0 อยู่กึ่งกลาง) หน่วยเป็น pp (percentage point)</div>
     </div>
+    <div class="sub-rows-wrap">
     ${rowsHtml}
+    </div>
     <div class="sub-caption">* Qty shift = ส่วนต่าง %share × ยอดรวม ROLLS เดือน มิ.ย. (${a.june_total} Set) — ผลรวม Qty shift ของทุก SET จะเท่ากับ 0 เสมอ (เป็นการแจกแจงส่วนแบ่งที่เปลี่ยนไป ไม่ใช่แค่ของ Seasonal ฝ่ายเดียว)</div>
 
     <div class="rev-verdict ${isGood?'good':'bad'}">
