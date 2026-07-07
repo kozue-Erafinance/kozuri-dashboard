@@ -81,7 +81,7 @@ tr:last-child td{border-bottom:none;}
 .num-cell{text-align:right; font-variant-numeric:tabular-nums;}
 .chg-up{color:var(--up); font-weight:600;} .chg-down{color:var(--down); font-weight:600;}
 
-.rank-bar-row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; padding:5px 0;}
+.rank-bar-row{display:grid; grid-template-columns:1fr auto; align-items:center; gap:10px; padding:2.5px 0;}
 .rank-name{font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .rank-track{grid-column:1/3; background:#f0ede4; border-radius:4px; height:9px; position:relative; margin-top:2px;}
 .rank-fill{height:100%; border-radius:4px;}
@@ -252,12 +252,12 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 
     <div class="section-title"><span class="num">03</span><h2>เมนูขายดี — A La Carte &amp; เครื่องดื่ม (<span id="topMonthLabel"></span>)</h2><span class="rule"></span></div>
     <div class="grid-2b">
-      <div class="card"><h3><span class="dot tl"></span> Top A La Carte — Thonglor</h3><div id="rankAlcTL"></div></div>
-      <div class="card"><h3><span class="dot ctw"></span> Top A La Carte — CTW</h3><div id="rankAlcCTW"></div></div>
+      <div class="card"><h3><span class="dot tl"></span> A La Carte — Thonglor</h3><div style="max-height:420px; overflow:auto;" id="rankAlcTL"></div></div>
+      <div class="card"><h3><span class="dot ctw"></span> A La Carte — CTW</h3><div style="max-height:420px; overflow:auto;" id="rankAlcCTW"></div></div>
     </div>
     <div class="grid-2b" style="margin-top:18px;">
-      <div class="card"><h3><span class="dot tl"></span> Top เครื่องดื่ม — Thonglor</h3><div id="rankBevTL"></div></div>
-      <div class="card"><h3><span class="dot ctw"></span> Top เครื่องดื่ม — CTW</h3><div id="rankBevCTW"></div></div>
+      <div class="card"><h3><span class="dot tl"></span> เครื่องดื่ม (Drinks) — Thonglor</h3><div style="max-height:420px; overflow:auto;" id="rankBevTL"></div></div>
+      <div class="card"><h3><span class="dot ctw"></span> เครื่องดื่ม (Drinks) — CTW</h3><div style="max-height:420px; overflow:auto;" id="rankBevCTW"></div></div>
     </div>
   </div>
 
@@ -477,10 +477,11 @@ function buildTrendCharts(){
       {label:'CTW', data:months.map(m=>DATA.cost_gap_trend.CTW[m]??null), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:22},
       {label:'Thonglor', data:months.map(m=>DATA.cost_gap_trend.Thonglor[m]??null), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:22},
     ]},
-    options:{maintainAspectRatio:false, layout:{padding:{bottom:14}},
+    options:{maintainAspectRatio:false, layout:{padding:{bottom:26, top:6}},
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+fmtNum(c.parsed.y)}},
-        datalabels:{display:true, anchor:'end', align:'end', offset:2, font:{size:9.5, weight:'600'}, color:'#5b6472',
-          formatter: v => v==null?'':(v/1000).toFixed(0)+'k' }},
+        datalabels:{display:true, anchor:'end', align:'end', offset:4, font:{size:12, weight:'700'},
+          color: ctx => ctx.datasetIndex===0 ? CTW_COLOR : '#8a6d2a',
+          formatter: v => v==null?'':'฿'+(v/1000).toFixed(0)+'k' }},
       scales:{y:{ticks:{callback:v=>'฿'+fmtNum(v)}, grid:{color:'#eee7d6'}}, x:{grid:{display:false}}}}
   });
 }
@@ -516,8 +517,8 @@ function buildRolls(m){
       {label:'Thonglor', data:tlQ, backgroundColor:TL_COLOR, borderRadius:5, maxBarThickness:34},
       {label:'CTW', data:ctwQ, backgroundColor:CTW_COLOR, borderRadius:5, maxBarThickness:34},
     ]},
-    options:{maintainAspectRatio:false, layout:{padding:{top:40}},
-      plugins:{legend:{position:'top', labels:{boxWidth:10, boxHeight:10}},
+    options:{maintainAspectRatio:false, layout:{padding:{top:56}},
+      plugins:{legend:{position:'top', align:'start', labels:{boxWidth:10, boxHeight:10}},
         datalabels:{display:true, anchor:'end', align:'top', offset:2, font:(ctx)=>({size: ctx.dataIndex!==undefined && ctx.dataset.data ? 11 : 11, weight:'700'}),
           color: ctx => {
             const row = ctx.datasetIndex===0 ? tlFull[ctx.dataIndex] : ctwFull[ctx.dataIndex];
@@ -553,8 +554,8 @@ function buildRolls(m){
       {label:'Thonglor', data:tlRev, backgroundColor:TL_COLOR, borderRadius:5, maxBarThickness:34},
       {label:'CTW', data:ctwRev, backgroundColor:CTW_COLOR, borderRadius:5, maxBarThickness:34},
     ]},
-    options:{maintainAspectRatio:false, layout:{padding:{top:40}},
-      plugins:{legend:{position:'top', labels:{boxWidth:10, boxHeight:10}},
+    options:{maintainAspectRatio:false, layout:{padding:{top:56}},
+      plugins:{legend:{position:'top', align:'start', labels:{boxWidth:10, boxHeight:10}},
         tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+fmtNum(c.parsed.y)}},
         datalabels:{display:true, anchor:'end', align:'top', offset:2, font:{size:10.5, weight:'700'},
           color: ctx => {
@@ -809,7 +810,12 @@ async function fetchCsvRows(gid, label){
   const text = await res.text();
   const parsed = Papa.parse(text, {header:true, skipEmptyLines:true});
   if(!parsed.data.length) throw new Error(`ชีท "${label}" ไม่มีข้อมูล หรือ gid ไม่ถูกต้อง`);
-  return parsed.data;
+  // Trim header whitespace (Google Sheets export sometimes has " Theoretical " etc with stray spaces)
+  return parsed.data.map(row=>{
+    const out = {};
+    for(const k in row){ out[k.trim()] = row[k]; }
+    return out;
+  });
 }
 function toNum(v){
   if(v===undefined || v===null || v==='') return null;
@@ -824,25 +830,22 @@ function toMonthNum(v){
   const n = toNum(s);
   return n;
 }
-function inferCategoryFromCode(code){
-  const c = (code||'').toUpperCase();
-  if(/^B\d/.test(c)) return 'Beer';
-  if(/^DS/.test(c)) return 'Dessert';
-  if(/^PR/.test(c)) return 'Premium Roll';
-  if(/^R\d/.test(c)) return 'A La Carte';
-  if(/^S0/.test(c)) return 'SET';
-  if(/^SK/.test(c)) return 'Sake';
-  if(/^SD/.test(c)) return 'Soft Drink';
-  if(/^SP/.test(c)) return 'Soup';
-  if(/^SS/.test(c)) return 'Set Selection';
-  return 'Other';
+// Category grouping — mirrors the exact CASE WHEN spec:
+//   Drinks: รหัส starts with b10 / sk / sd / ds / drinks / sake
+//   A La Carte: รหัส starts with pr1 / r1 / sp
+//   ELSE: รหัส itself (unchanged)
+function categorizeCode(codeRaw){
+  const c = (codeRaw||'').toLowerCase().trim();
+  if(c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('drinks') || c.startsWith('sake')) return 'Drinks';
+  if(c.startsWith('pr1') || c.startsWith('r1') || c.startsWith('sp')) return 'A La Carte';
+  return codeRaw;
 }
 function normalizeSalesRows(raw){
   return raw.map(r=>{
     const branch = (r['Branch']||'').trim();
     const month = toMonthNum(r['Month']);
     const codeRaw = (r['รหัส']||'').trim();
-    const category = (branch==='CTW') ? inferCategoryFromCode(codeRaw) : (codeRaw || 'Other');
+    const category = categorizeCode(codeRaw);
     return {
       change: toNum(r['Change']),
       pct_change: (r['%Change']!==undefined && String(r['%Change']).trim()!=='') ? String(r['%Change']).trim() : null,
@@ -871,7 +874,7 @@ function detectRollType(row){
   return null;
 }
 function isAlaCarte(r){ return r.category==='A La Carte'; }
-function isBeverage(r){ return ['Beer','Soft Drink','Sake','Dessert','Drinks','SAKE','Smoothie'].includes(r.category); }
+function isBeverage(r){ return r.category==='Drinks'; }
 
 function buildMonthlySales(sales){
   const out = {CTW:{}, Thonglor:{}};
@@ -922,7 +925,7 @@ function buildTopByMonth(sales, filterFn){
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=6;m++){
       const rows = sales.filter(r=>r.branch===b && r.month===m && filterFn(r));
-      out[b][m] = [...rows].sort((a,c)=>c.qty-a.qty).slice(0,12).map(r=>[r.item, r.qty]);
+      out[b][m] = [...rows].sort((a,c)=>c.qty-a.qty).map(r=>[r.item, r.qty]);
     }
   });
   return out;
