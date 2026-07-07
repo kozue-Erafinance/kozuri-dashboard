@@ -103,13 +103,13 @@ tr:last-child td{border-bottom:none;}
 .empty-note{font-size:12.5px; color:var(--ink-soft); font-style:italic; padding:10px 0;}
 
 .sub-callout{
-  display:flex; align-items:center; gap:14px; background:linear-gradient(90deg,var(--gold-100),#fff);
-  border:1px solid var(--gold-400); border-radius:12px; padding:14px 18px; margin-bottom:16px;
+  display:flex; align-items:center; justify-content:center; gap:14px; background:linear-gradient(90deg,var(--gold-100),#fff);
+  border:1px solid var(--gold-400); border-radius:12px; padding:14px 24px; margin-bottom:16px;
 }
 .sub-callout .big-num{font-size:26px; font-weight:700; color:var(--navy-950); white-space:nowrap;}
 .sub-callout .txt{font-size:13px; color:var(--ink-soft); line-height:1.45;}
 .sub-rows-wrap{overflow-x:auto;}
-.sub-row{display:grid; grid-template-columns:150px 240px 90px 130px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); min-width:640px; white-space:nowrap;}
+.sub-row{display:grid; grid-template-columns:150px 240px 90px 165px; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--line); min-width:680px; white-space:nowrap;}
 .sub-row:last-child{border-bottom:none;}
 .sub-row .name{font-size:13px; font-weight:600; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .sub-row .qty-chg{font-size:12px; font-weight:600; text-align:right; white-space:nowrap;}
@@ -118,11 +118,13 @@ tr:last-child td{border-bottom:none;}
 .sub-fill-diverge{position:absolute; top:0; height:100%;}
 .sub-fill-diverge.pos{left:50%; background:linear-gradient(90deg,#1e7d4a,#3fae72);}
 .sub-fill-diverge.neg{right:50%; background:linear-gradient(90deg,#d1685f,#b3423a);}
+.bar-cell{display:flex; flex-direction:column; gap:3px; padding:4px 0;}
+.bar-label{font-size:10.5px; font-weight:700; text-align:center; white-space:nowrap;}
 .sub-pct{font-size:12.5px; font-weight:700; color:#8a6d2a; text-align:left; white-space:nowrap;}
 .sub-caption{font-size:11.5px; color:var(--ink-soft); margin-top:10px; font-style:italic; white-space:normal;}
 
 .rev-verdict{
-  display:flex; align-items:center; gap:16px; border-radius:12px; padding:16px 18px; margin:16px 0 14px;
+  display:flex; align-items:center; justify-content:center; gap:16px; border-radius:12px; padding:16px 24px; margin:16px 0 14px;
 }
 .rev-verdict.good{background:#eaf6ee; border:1px solid #9ecdae;}
 .rev-verdict.bad{background:#fbeceb; border:1px solid #e2a8a3;}
@@ -653,11 +655,15 @@ function buildShareShiftForBranch(elId, branch, colorClass){
     const fillDiv = up
       ? `<div class="sub-fill-diverge pos" style="width:${halfWidthPct}%;" title="${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp"></div>`
       : `<div class="sub-fill-diverge neg" style="width:${halfWidthPct}%;" title="${r.share_shift_pp}pp"></div>`;
+    const barLabel = `${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set / ${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}%`;
     return `<div class="sub-row">
       <div class="name">${r.type} <span class="price-tag">฿${fmtNum(r.price)}</span></div>
       <div class="sub-pct">(${fmtNum(r.baseline_avg_qty)} Set) ${r.baseline_share}% → (${fmtNum(r.june_qty)} Set) ${r.june_share}%</div>
       <div class="qty-chg ${up?'chg-up':'chg-down'}">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set</div>
-      <div class="sub-track-diverge"><div class="center-line"></div>${fillDiv}</div>
+      <div class="bar-cell">
+        <div class="sub-track-diverge"><div class="center-line"></div>${fillDiv}</div>
+        <div class="bar-label ${up?'chg-up':'chg-down'}">${barLabel}</div>
+      </div>
     </div>`;
   }).join('');
 
