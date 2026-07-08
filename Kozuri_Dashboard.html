@@ -81,7 +81,7 @@ tr:last-child td{border-bottom:none;}
 .num-cell{text-align:right; font-variant-numeric:tabular-nums;}
 .chg-up{color:var(--up); font-weight:600;} .chg-down{color:var(--down); font-weight:600;}
 
-.rank-bar-row{display:grid; grid-template-columns:150px 1fr 78px; align-items:center; gap:8px; padding:1.25px 0; line-height:1.15;}
+.rank-bar-row{display:grid; grid-template-columns:150px minmax(160px,260px) 40px; align-items:center; gap:6px; padding:1.25px 0; line-height:1.15;}
 .rank-name{font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .rank-track{background:#f0ede4; border-radius:4px; height:8px; position:relative;}
 .rank-pct-onbar{position:absolute; top:50%; transform:translateY(-50%); font-size:9px; font-weight:700; color:#5b5142; white-space:nowrap; line-height:1;}
@@ -92,7 +92,7 @@ tr:last-child td{border-bottom:none;}
 .sub-fill.shift-down{background:linear-gradient(90deg,#b3423a,#d1685f);}
 .sub-fill.shift-tl{background:linear-gradient(90deg,#c9a961,#e0c383);}
 .sub-fill.shift-ctw{background:linear-gradient(90deg,#274873,#4169a3);}
-.rank-qty{font-size:12px; color:var(--ink-soft); font-weight:600; min-width:34px; text-align:right;}
+.rank-qty{font-size:12px; color:var(--ink-soft); font-weight:600; min-width:34px; text-align:left;}
 
 .top-n-tabs{display:flex; gap:6px; margin-bottom:14px;}
 .top-n-btn{
@@ -693,11 +693,16 @@ function rankList(id, allRows, colorClass){
   const total = allRows.reduce((s,r)=>s+r[1], 0) || 1;
   const rows = topNFilter==='all' ? allRows : allRows.slice(0, parseInt(topNFilter));
   if(!rows.length){ document.getElementById(id).innerHTML = '<div class="empty-note">ไม่มีข้อมูลเดือนนี้</div>'; return; }
-  document.getElementById(id).innerHTML = rows.map(r=>{
-    const pct = (r[1]/total*100).toFixed(1);
+  const pctList = rows.map(r=> r[1]/total*100);
+  const maxPct = Math.max(...pctList);
+  const scale = maxPct + 10; // full-width of the bar track = max item's % + 10pp headroom (not labeled anywhere)
+  document.getElementById(id).innerHTML = rows.map((r,i)=>{
+    const pct = pctList[i];
+    const pctLabel = pct.toFixed(1);
+    const barWidth = (pct/scale*100).toFixed(1);
     return `<div class="rank-bar-row">
       <div class="rank-name">${r[0]}</div>
-      <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${pct}%"></div><span class="rank-pct-onbar" style="left:calc(${pct}% + 4px);">${pct}%</span></div>
+      <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${barWidth}%"></div><span class="rank-pct-onbar" style="left:calc(${barWidth}% + 4px);">${pctLabel}%</span></div>
       <div class="rank-qty">${fmtNum(r[1])}</div>
     </div>`;
   }).join('');
