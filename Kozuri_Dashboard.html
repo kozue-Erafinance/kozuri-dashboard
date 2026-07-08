@@ -187,9 +187,9 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 <div class="topbar">
   <div class="topbar-inner">
     <div>
-      <div class="brand-eyebrow">Kozue Enterprise · Era Izaan Omakase</div>
+      <div class="brand-eyebrow">Kozuri Handroll</div>
       <div class="brand-title">Performance Dashboard</div>
-      <div class="brand-sub">Ratchapruek (CTW) · Thonglor — ยอดขาย, SET/ROLLS, Top Items &amp; Fish Yield</div>
+      <div class="brand-sub">CTW · Thonglor — ยอดขาย, SET/ROLLS, Top Items &amp; Fish Yield</div>
     </div>
     <div class="controls">
       <select class="month-select" id="globalMonth"></select>
@@ -647,45 +647,11 @@ function buildSubstitution(){
 function buildShareShiftForBranch(elId, branch, colorClass){
   const el = document.getElementById(elId);
   const a = DATA.share_shift_analysis[branch];
-  const rows = [...a.rows].sort((x,y)=>y.share_shift_pp - x.share_shift_pp);
-  const maxAbsShift = Math.max(...rows.map(r=>Math.abs(r.share_shift_pp)));
-
-  const rowsHtml = rows.map(r=>{
-    const up = r.share_shift_pp >= 0;
-    const halfWidthPct = (Math.abs(r.share_shift_pp)/maxAbsShift*50).toFixed(1);
-    const fillDiv = up
-      ? `<div class="sub-fill-diverge pos" style="width:${halfWidthPct}%;" title="${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp"></div>`
-      : `<div class="sub-fill-diverge neg" style="width:${halfWidthPct}%;" title="${r.share_shift_pp}pp"></div>`;
-    const barLabel = `${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)} Set / ${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}%`;
-    return `<div class="sub-row">
-      <div class="name">${r.type}</div>
-      <div class="sub-pct">(${fmtNum(r.baseline_avg_qty)} Set) ${r.baseline_share}% → (${fmtNum(r.june_qty)} Set) ${r.june_share}%</div>
-      <div class="bar-cell">
-        <div class="bar-label ${up?'chg-up':'chg-down'}">${barLabel}</div>
-        <div class="sub-track-diverge"><div class="center-line"></div>${fillDiv}</div>
-      </div>
-    </div>`;
-  }).join('');
-
   const isGood = a.net_impact >= 0;
   const revTableId = 'revTable' + (colorClass==='tl' ? 'TL' : 'CTW');
 
   el.innerHTML = `
-    <div class="sub-callout">
-      <div class="big-num">${a.june_total} Set</div>
-      <div class="txt">ยอด ROLLS รวมเดือน มิ.ย. เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — บาร์ขวา+เขียว = ส่วนแบ่งเพิ่มขึ้น, บาร์ซ้าย+แดง = ส่วนแบ่งลดลง (0 อยู่กึ่งกลาง) หน่วยเป็น pp (percentage point)</div>
-    </div>
-    <div class="sub-rows-wrap">
-    ${rowsHtml}
-    </div>
-    <div class="sub-caption">* Qty shift = ส่วนต่าง %share × ยอดรวม ROLLS เดือน มิ.ย. (${a.june_total} Set) — ผลรวม Qty shift ของทุก SET จะเท่ากับ 0 เสมอ (เป็นการแจกแจงส่วนแบ่งที่เปลี่ยนไป ไม่ใช่แค่ของ Seasonal ฝ่ายเดียว)</div>
-
-    <div class="rev-verdict ${isGood?'good':'bad'}">
-      <div class="rv-num">${isGood?'+':'-'}฿${fmtNum(Math.abs(a.net_impact))}</div>
-      <div class="rv-txt">
-        <b>${isGood? 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้เพิ่มขึ้น' : 'สุทธิแล้ว การเปลี่ยน mix ของ SET ทำให้รายได้ลดลง'}</b> ประมาณ ฿${fmtNum(Math.abs(a.net_impact))}/เดือน (คำนวณที่ยอดรวมระดับเดียวกับ มิ.ย. เพื่อแยกผลจาก "เปลี่ยนสัดส่วน" ออกจากผลของ "ยอดรวมเปลี่ยน")
-      </div>
-    </div>
+    <div class="sub-caption" style="margin-bottom:10px;">ยอด ROLLS รวมเดือน มิ.ย. = ${a.june_total} Set เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — Δ pp = ส่วนแบ่งที่เปลี่ยนไป (+เขียว = เพิ่มขึ้น, -แดง = ลดลง)</div>
     <table class="rev-table" id="${revTableId}"></table>
   `;
 
@@ -700,9 +666,10 @@ function buildShareShiftForBranch(elId, branch, colorClass){
   ];
   const revFormatRow = r=>{
     const cls = r.revenue_impact>=0 ? 'rev-impact-pos' : 'rev-impact-neg';
+    const ppCls = r.share_shift_pp>=0 ? 'chg-up' : 'chg-down';
     return `<tr><td>${r.type}</td><td class="num-cell">฿${fmtNum(r.price)}</td>
       <td class="num-cell">${r.baseline_share}%</td><td class="num-cell">${r.june_share}%</td>
-      <td class="num-cell">${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp</td>
+      <td class="num-cell ${ppCls}">${r.share_shift_pp>=0?'+':''}${r.share_shift_pp}pp</td>
       <td class="num-cell">${r.qty_shift>=0?'+':''}${r.qty_shift.toFixed(1)}</td>
       <td class="num-cell ${cls}">${r.revenue_impact>=0?'+':''}฿${fmtNum(r.revenue_impact)}</td></tr>`;
   };
