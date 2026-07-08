@@ -84,6 +84,7 @@ tr:last-child td{border-bottom:none;}
 .rank-bar-row{display:grid; grid-template-columns:150px 1fr 78px; align-items:center; gap:8px; padding:1.25px 0; line-height:1.15;}
 .rank-name{font-size:12.5px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .rank-track{background:#f0ede4; border-radius:4px; height:8px; position:relative;}
+.rank-pct-onbar{position:absolute; top:50%; transform:translateY(-50%); font-size:9px; font-weight:700; color:#5b5142; white-space:nowrap; line-height:1;}
 .rank-fill{height:100%; border-radius:4px;}
 .rank-fill.ctw{background:linear-gradient(90deg,#274873,#4169a3);}
 .rank-fill.tl{background:linear-gradient(90deg,#c9a961,#e0c383);}
@@ -689,15 +690,15 @@ function buildTopItems(m){
   rankList('rankBevCTW', DATA.top_bev_by_month.CTW[m]||[], 'ctw');
 }
 function rankList(id, allRows, colorClass){
+  const total = allRows.reduce((s,r)=>s+r[1], 0) || 1;
   const rows = topNFilter==='all' ? allRows : allRows.slice(0, parseInt(topNFilter));
   if(!rows.length){ document.getElementById(id).innerHTML = '<div class="empty-note">ไม่มีข้อมูลเดือนนี้</div>'; return; }
-  const max = Math.max(...rows.map(r=>r[1]));
   document.getElementById(id).innerHTML = rows.map(r=>{
-    const pct = (r[1]/max*100).toFixed(0);
+    const pct = (r[1]/total*100).toFixed(1);
     return `<div class="rank-bar-row">
       <div class="rank-name">${r[0]}</div>
-      <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${pct}%"></div></div>
-      <div class="rank-qty">${fmtNum(r[1])} <span style="font-weight:400; color:var(--ink-soft);">(${pct}%)</span></div>
+      <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${pct}%"></div><span class="rank-pct-onbar" style="left:calc(${pct}% + 4px);">${pct}%</span></div>
+      <div class="rank-qty">${fmtNum(r[1])}</div>
     </div>`;
   }).join('');
 }
