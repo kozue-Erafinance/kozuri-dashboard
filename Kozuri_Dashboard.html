@@ -290,15 +290,33 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <h3><span class="dot tl"></span> Thonglor <span style="margin-left:auto;"><span class="badge-score" id="scoreTL"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿</div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldTL"></table></div>
-        <h3 style="margin-top:20px;">West — Thonglor <span class="raw-note" style="margin-left:6px;">(เฉพาะรายการที่มีของเสีย > 0 เรียงจากมากไปน้อย)</span></h3>
-        <div style="max-height:340px; overflow:auto;"><table id="westTL"></table></div>
+        <h3 style="margin-top:20px;">West — Thonglor</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
+            <div style="max-height:340px; overflow:auto;"><table id="westTL"></table></div>
+          </div>
+          <div>
+            <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelTL">น้ำหนักที่เหลือ</div>
+            <div style="max-height:340px; overflow:auto;"><table id="pdtTL"></table></div>
+          </div>
+        </div>
       </div>
       <div class="card">
         <h3><span class="dot ctw"></span> CTW <span style="margin-left:auto;"><span class="badge-score" id="scoreCTW"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿</div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldCTW"></table></div>
-        <h3 style="margin-top:20px;">West — CTW <span class="raw-note" style="margin-left:6px;">(เฉพาะรายการที่มีของเสีย > 0 เรียงจากมากไปน้อย)</span></h3>
-        <div style="max-height:340px; overflow:auto;"><table id="westCTW"></table></div>
+        <h3 style="margin-top:20px;">West — CTW</h3>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
+          <div>
+            <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
+            <div style="max-height:340px; overflow:auto;"><table id="westCTW"></table></div>
+          </div>
+          <div>
+            <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelCTW">น้ำหนักที่เหลือ</div>
+            <div style="max-height:340px; overflow:auto;"><table id="pdtCTW"></table></div>
+          </div>
+        </div>
       </div>
     </div>
     <div class="grid-2b" style="margin-top:18px;">
@@ -457,11 +475,21 @@ function buildTrendCharts(){
       {label:'CTW', data:months.map(m=>DATA.monthly_sales.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
       {label:'Thonglor', data:months.map(m=>DATA.monthly_sales.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
     ]},
-    options:{maintainAspectRatio:false, layout:{padding:{top:22}},
+    options:{maintainAspectRatio:false, layout:{padding:{top:34}},
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+fmtNum(c.parsed.y)}},
         datalabels:{display:true, align:'top', anchor:'end', offset:4, font:{size:10, weight:'600'},
           color: ctx=>ctx.dataset.borderColor,
-          formatter: v => v==null?'':'฿'+(v/1e6).toFixed(2)+'M' }},
+          formatter: (v, ctx) => {
+            if(v==null) return '';
+            const lines = ['฿'+(v/1e6).toFixed(2)+'M'];
+            const arr = ctx.dataset.data;
+            const idx = ctx.dataIndex;
+            if(idx>0 && arr[idx-1]!=null && arr[idx-1]!==0){
+              const mom = (v-arr[idx-1])/arr[idx-1]*100;
+              lines.push((mom>=0?'+':'')+mom.toFixed(1)+'% MoM');
+            }
+            return lines;
+          } }},
       scales:{y:{ticks:{callback:v=>'฿'+(v/1e6).toFixed(1)+'M'}, grid:{color:'#eee7d6'}}, x:{grid:{display:false}}}}
   });
   if(setQtyChart) setQtyChart.destroy();
@@ -717,6 +745,11 @@ document.querySelectorAll('.top-n-btn').forEach(btn=>{
 });
 
 // ---------- Yield / Cost gap (depends on month) ----------
+const LAST_DAY_OF_MONTH = {1:31,2:28,3:31,4:30,5:31,6:30};
+function lastDayLabel(m){
+  const day = LAST_DAY_OF_MONTH[m] || 30;
+  return `${String(day).padStart(2,'0')}/${String(m).padStart(2,'0')}/2026`;
+}
 function buildYield(m){
   document.getElementById('yieldMonthLabel').textContent = MON_LABELS[m] + ' 2026';
   const tl = DATA.yield_summary_by_month.Thonglor[m];
@@ -733,20 +766,38 @@ function buildYield(m){
   gapCTWel.className = 'gap-value ' + (ctw ? (ctw.cost_gap_total<0?'neg':(ctw.cost_gap_total>0?'pos':'zero')) : 'zero');
   westTable('westTL', DATA.west_by_month.Thonglor[m] || []);
   westTable('westCTW', DATA.west_by_month.CTW[m] || []);
+  const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
+  document.getElementById('pdtLabelTL').textContent = dateLabel;
+  document.getElementById('pdtLabelCTW').textContent = dateLabel;
+  pdtTable('pdtTL', DATA.west_by_month.Thonglor[m] || []);
+  pdtTable('pdtCTW', DATA.west_by_month.CTW[m] || []);
 }
 function westTable(id, rows){
   const filtered = rows.filter(r => r[3] > 0);
   const headers = [
-    {label:'หมวด', key:r=>r[1], numeric:false},
     {label:'รายการ', key:r=>r[0], numeric:false},
     {label:'Waste (WT)', key:r=>r[3], numeric:true},
     {label:'หน่วย', key:r=>r[2], numeric:false},
   ];
   const formatRow = r=>{
     const [name, category, unit2, wt] = r;
-    return `<tr><td>${category||'-'}</td><td>${name}</td><td class="num-cell chg-down">${fmtNum(wt)}</td><td>${unit2||'-'}</td></tr>`;
+    return `<tr><td>${name}</td><td class="num-cell chg-down">${fmtNum(wt)}</td><td>${unit2||'-'}</td></tr>`;
   };
-  renderSortableTable(id, headers, filtered, formatRow, 2, 'desc');
+  renderSortableTable(id, headers, filtered, formatRow, 1, 'desc');
+}
+function pdtTable(id, rows){
+  // rows: [name, category, unit2, wt, pdt, unit1] — pdt/unit1 = "remaining weight" for the month
+  const filtered = rows.filter(r => (r[4]||0) > 0);
+  const headers = [
+    {label:'รายการ', key:r=>r[0], numeric:false},
+    {label:'น้ำหนักที่เหลือ', key:r=>r[4], numeric:true},
+    {label:'หน่วย', key:r=>r[5], numeric:false},
+  ];
+  const formatRow = r=>{
+    const [name, category, unit2, wt, pdt, unit1] = r;
+    return `<tr><td>${name}</td><td class="num-cell">${fmtNum(pdt)}</td><td>${unit1||'-'}</td></tr>`;
+  };
+  renderSortableTable(id, headers, filtered, formatRow, 1, 'desc');
 }
 function yieldTable(id, items){
   const headers = [
