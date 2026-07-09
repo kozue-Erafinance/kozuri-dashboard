@@ -1072,15 +1072,15 @@ function buildRemainingWeightByMonth(rows){
   }
   return out;
 }
+const MONTH_ABBR = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'};
 function buildLatestDateMap(yieldLoss){
   const hasBranch = yieldLoss.some(r=>r.branch);
-  const map = {};
+  const map = {}; // key: item[|branch]|month -> {day, mo}
   yieldLoss.forEach(r=>{
-    const key = hasBranch ? (r.item+'|'+r.branch) : r.item;
-    const val = r.date.y*10000 + r.date.mo*100 + r.date.d;
+    const key = (hasBranch ? (r.item+'|'+r.branch) : r.item) + '|' + r.date.mo;
     const cur = map[key];
-    if(!cur || val>cur.val){
-      map[key] = {val, label: `${String(r.date.d).padStart(2,'0')}/${String(r.date.mo).padStart(2,'0')}/${r.date.y}`};
+    if(!cur || r.date.d > cur.day){
+      map[key] = {day: r.date.d, mo: r.date.mo};
     }
   });
   return {map, hasBranch};
@@ -1095,8 +1095,9 @@ function buildYieldSummaryByMonth(fish, latestDateInfo){
       const items = rows.map(r=>{
         const theoCostValue = r.unit_price ? (r.theoretical * r.price_per_unit / r.unit_price) : 0;
         totalTheoCostValue += theoCostValue;
-        const key = latestDateInfo.hasBranch ? (r.item+'|'+b) : r.item;
-        const updated = (latestDateInfo.map[key] && latestDateInfo.map[key].label) || '-';
+        const key = (latestDateInfo.hasBranch ? (r.item+'|'+b) : r.item) + '|' + m;
+        const found = latestDateInfo.map[key];
+        const updated = found ? (found.day + MONTH_ABBR[found.mo]) : '-';
         return [r.item, r.theoretical, r.actual, Math.round((r.theoretical-r.actual)*10)/10, Math.round(r.cost_gap), r.unit||'-', updated];
       });
       const costGapTotal = Math.round(rows.reduce((s,r)=>s+r.cost_gap,0));
