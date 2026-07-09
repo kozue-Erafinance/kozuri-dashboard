@@ -168,6 +168,8 @@ tr:last-child td{border-bottom:none;}
 .badge-score{display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:700; padding:4px 10px; border-radius:8px; background:var(--gold-100); color:#8a6d2a;}
 .gap-value{font-size:22px; font-weight:700;}
 .gap-value.neg{color:var(--down);} .gap-value.pos{color:var(--up);} .gap-value.zero{color:var(--ink-soft);}
+.pct-gap-tag{font-size:12.5px; font-weight:700; padding:2px 9px; border-radius:999px; margin-left:4px; vertical-align:middle;}
+.pct-gap-tag.neg{background:#fbeceb; color:var(--down);} .pct-gap-tag.pos{background:#eaf6ee; color:var(--up);} .pct-gap-tag.zero{background:#f0ede4; color:var(--ink-soft);}
 
 .filter-bar{display:flex; gap:10px; align-items:center; margin-bottom:12px; flex-wrap:wrap;}
 .filter-bar select, .filter-bar input{font-family:'Sarabun',sans-serif; font-size:13px; padding:7px 10px; border-radius:8px; border:1px solid var(--line); background:#fff; color:var(--ink);}
@@ -288,7 +290,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
     <div class="grid-2b">
       <div class="card">
         <h3><span class="dot tl"></span> Thonglor <span style="margin-left:auto;"><span class="badge-score" id="scoreTL"></span></span></h3>
-        <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿</div>
+        <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿ <span class="pct-gap-tag" id="pctGapTL"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldTL"></table></div>
         <h3 style="margin-top:20px;">West — Thonglor</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
@@ -304,7 +306,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
       </div>
       <div class="card">
         <h3><span class="dot ctw"></span> CTW <span style="margin-left:auto;"><span class="badge-score" id="scoreCTW"></span></span></h3>
-        <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿</div>
+        <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿ <span class="pct-gap-tag" id="pctGapCTW"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldCTW"></table></div>
         <h3 style="margin-top:20px;">West — CTW</h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
@@ -776,6 +778,16 @@ function buildYield(m){
   gapTLel.className = 'gap-value ' + (tl ? (tl.cost_gap_total<0?'neg':(tl.cost_gap_total>0?'pos':'zero')) : 'zero');
   gapCTWel.textContent = ctw ? fmtNum(ctw.cost_gap_total) : '-';
   gapCTWel.className = 'gap-value ' + (ctw ? (ctw.cost_gap_total<0?'neg':(ctw.cost_gap_total>0?'pos':'zero')) : 'zero');
+  const pctGapTLel = document.getElementById('pctGapTL');
+  const pctGapCTWel = document.getElementById('pctGapCTW');
+  function setPctGap(el, obj){
+    if(!obj || obj.pct_cost_gap===null || obj.pct_cost_gap===undefined){ el.textContent=''; el.className='pct-gap-tag'; return; }
+    const v = obj.pct_cost_gap;
+    el.textContent = '%Cost Gap ' + (v>=0?'+':'') + v.toFixed(1) + '%';
+    el.className = 'pct-gap-tag ' + (v<0?'neg':(v>0?'pos':'zero'));
+  }
+  setPctGap(pctGapTLel, tl);
+  setPctGap(pctGapCTWel, ctw);
   westTable('westTL', DATA.west_by_month.Thonglor[m] || []);
   westTable('westCTW', DATA.west_by_month.CTW[m] || []);
   const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
@@ -812,20 +824,23 @@ function pdtTable(id, rows){
 function yieldTable(id, items){
   const headers = [
     {label:'Item', key:it=>it[0], numeric:false},
+    {label:'Unit', key:it=>it[5], numeric:false},
     {label:'Theoretical', key:it=>it[1], numeric:true},
     {label:'Actual', key:it=>it[2], numeric:true},
     {label:'Weight Gap', key:it=>it[3], numeric:true},
     {label:'Cost Gap', key:it=>it[4], numeric:true},
+    {label:'Updated', key:it=>it[6], numeric:false},
   ];
   const formatRow = it=>{
     const gap = it[4];
     const wgap = it[3];
     const cls = gap<0 ? 'chg-down' : (gap>0?'chg-up':'');
     const wcls = wgap<0 ? 'chg-down' : (wgap>0?'chg-up':'');
-    return `<tr><td>${it[0]}</td><td class="num-cell">${fmtNum(it[1])}</td><td class="num-cell">${fmtNum(it[2])}</td>
-      <td class="num-cell ${wcls}">${wgap===0?'-':fmtSigned(wgap)}</td><td class="num-cell ${cls}">${gap===0?'-':fmtSigned(gap)}</td></tr>`;
+    return `<tr><td>${it[0]}</td><td>${it[5]||'-'}</td><td class="num-cell">${fmtNum(it[1])}</td><td class="num-cell">${fmtNum(it[2])}</td>
+      <td class="num-cell ${wcls}">${wgap===0?'-':fmtSigned(wgap)}</td><td class="num-cell ${cls}">${gap===0?'-':fmtSigned(gap)}</td>
+      <td>${it[6]||'-'}</td></tr>`;
   };
-  renderSortableTable(id, headers, items, formatRow, 4, 'asc');
+  renderSortableTable(id, headers, items, formatRow, 5, 'asc');
 }
 
 // ---------- Full item table (depends on month) ----------
@@ -1011,9 +1026,12 @@ function normalizeFishRows(raw){
     branch: (r['Branch']||'').trim(),
     category: (r['Category']||'').trim(),
     item: (r['Main Item']||r['Item']||'').trim(),
+    unit: (r['Unit']||'').trim(),
     theoretical: toNum(r['Theoretical']) || 0,
     actual: toNum(r['Actual']) || 0,
     cost_gap: toNum(r['Cost Gap']) || 0,
+    price_per_unit: toNum(r['Price per Unit']) || 0,
+    unit_price: toNum(r['Unit Price']) || 0,
     score: toNum(r['SCORE']),
   })).filter(r=>r.branch && r.month && r.item);
 }
@@ -1054,16 +1072,39 @@ function buildRemainingWeightByMonth(rows){
   }
   return out;
 }
-function buildYieldSummaryByMonth(fish){
+function buildLatestDateMap(yieldLoss){
+  const hasBranch = yieldLoss.some(r=>r.branch);
+  const map = {};
+  yieldLoss.forEach(r=>{
+    const key = hasBranch ? (r.item+'|'+r.branch) : r.item;
+    const val = r.date.y*10000 + r.date.mo*100 + r.date.d;
+    const cur = map[key];
+    if(!cur || val>cur.val){
+      map[key] = {val, label: `${String(r.date.d).padStart(2,'0')}/${String(r.date.mo).padStart(2,'0')}/${r.date.y}`};
+    }
+  });
+  return {map, hasBranch};
+}
+function buildYieldSummaryByMonth(fish, latestDateInfo){
   const out = {CTW:{}, Thonglor:{}};
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=6;m++){
       const rows = fish.filter(r=>r.branch===b && r.month===m);
       if(!rows.length) continue;
-      const items = rows.map(r=>[r.item, r.theoretical, r.actual, Math.round((r.theoretical-r.actual)*10)/10, Math.round(r.cost_gap)]);
+      let totalTheoCostValue = 0;
+      const items = rows.map(r=>{
+        const theoCostValue = r.unit_price ? (r.theoretical * r.price_per_unit / r.unit_price) : 0;
+        totalTheoCostValue += theoCostValue;
+        const key = latestDateInfo.hasBranch ? (r.item+'|'+b) : r.item;
+        const updated = (latestDateInfo.map[key] && latestDateInfo.map[key].label) || '-';
+        return [r.item, r.theoretical, r.actual, Math.round((r.theoretical-r.actual)*10)/10, Math.round(r.cost_gap), r.unit||'-', updated];
+      });
+      const costGapTotal = Math.round(rows.reduce((s,r)=>s+r.cost_gap,0));
+      const pctCostGap = totalTheoCostValue ? Math.round(costGapTotal/totalTheoCostValue*1000)/10 : null;
       out[b][m] = {
         score: rows[0].score,
-        cost_gap_total: Math.round(rows.reduce((s,r)=>s+r.cost_gap,0)),
+        cost_gap_total: costGapTotal,
+        pct_cost_gap: pctCostGap,
         items
       };
     }
@@ -1150,13 +1191,14 @@ async function loadAllDataAndInit(silent=false){
     const sales = normalizeSalesRows(salesRaw);
     const fish = normalizeFishRows(fishRaw);
     const yieldLoss = normalizeYieldLossRows(yieldLossRaw);
+    const latestDateInfo = buildLatestDateMap(yieldLoss);
     const monthly_sales = buildMonthlySales(sales);
     const roll_table_by_month = buildRollTableByMonth(sales);
     const set_qty_trend = buildSetQtyTrend(roll_table_by_month);
     const top_alc_by_month = buildTopByMonth(sales, isAlaCarte);
     const top_bev_by_month = buildTopByMonth(sales, isBeverage);
     const items = buildItemsList(sales);
-    const yield_summary_by_month = buildYieldSummaryByMonth(fish);
+    const yield_summary_by_month = buildYieldSummaryByMonth(fish, latestDateInfo);
     const {score_trend, cost_gap_trend} = buildScoreCostGapTrend(fish);
     const kpi_by_month = buildKpiByMonth(monthly_sales, yield_summary_by_month);
     const share_shift_analysis = buildShareShiftAnalysis(roll_table_by_month);
