@@ -297,7 +297,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <h3><span class="dot tl"></span> Thonglor <span style="margin-left:auto;"><span class="badge-score" id="scoreTL"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿ <span class="pct-gap-tag" id="pctGapTL"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldTL"></table></div>
-        <h3 style="margin-top:20px;">West — Thonglor</h3>
+        <h3 style="margin-top:20px;">West — Thonglor <span class="pct-gap-tag neg" id="westValueTL" style="margin-left:8px;"></span></h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
             <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
@@ -313,7 +313,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <h3><span class="dot ctw"></span> CTW <span style="margin-left:auto;"><span class="badge-score" id="scoreCTW"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿ <span class="pct-gap-tag" id="pctGapCTW"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldCTW"></table></div>
-        <h3 style="margin-top:20px;">West — CTW</h3>
+        <h3 style="margin-top:20px;">West — CTW <span class="pct-gap-tag neg" id="westValueCTW" style="margin-left:8px;"></span></h3>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
             <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
@@ -835,8 +835,10 @@ function buildYield(m){
   }
   setPctGap(pctGapTLel, tl);
   setPctGap(pctGapCTWel, ctw);
-  westTable('westTL', DATA.west_by_month.Thonglor[m] || []);
-  westTable('westCTW', DATA.west_by_month.CTW[m] || []);
+  const westTLTotal = westTable('westTL', DATA.west_by_month.Thonglor[m] || []);
+  const westCTWTotal = westTable('westCTW', DATA.west_by_month.CTW[m] || []);
+  document.getElementById('westValueTL').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westTLTotal);
+  document.getElementById('westValueCTW').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westCTWTotal);
   const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
   document.getElementById('pdtLabelTL').textContent = dateLabel;
   document.getElementById('pdtLabelCTW').textContent = dateLabel;
@@ -849,12 +851,14 @@ function westTable(id, rows){
     {label:'รายการ', key:r=>r[0], numeric:false},
     {label:'Waste (WT)', key:r=>r[3], numeric:true},
     {label:'หน่วย', key:r=>r[2], numeric:false},
+    {label:'มูลค่า', key:r=>r[4], numeric:true},
   ];
   const formatRow = r=>{
-    const [name, category, unit2, wt] = r;
-    return `<tr><td>${name}</td><td class="num-cell chg-down">${fmtNum(wt)}</td><td>${unit2||'-'}</td></tr>`;
+    const [name, category, unit2, wt, value] = r;
+    return `<tr><td>${name}</td><td class="num-cell chg-down">${fmtNum(wt)}</td><td>${unit2||'-'}</td><td class="num-cell chg-down">฿${fmtNum(value||0)}</td></tr>`;
   };
   renderSortableTable(id, headers, filtered, formatRow, 1, 'desc');
+  return filtered.reduce((s,r)=>s+(r[4]||0), 0);
 }
 function pdtTable(id, rows){
   // rows: [item, weight] — from YieldLoss Data sheet (Main Item, DATE, Yield), matched to the last day of the selected month
@@ -1152,15 +1156,25 @@ function parseWestGrid(text){
     if((grid[i][1]||'').trim().toUpperCase()==='CATEGORY'){ headerIdx = i; break; }
   }
   if(headerIdx===-1) return null; // doesn't look like a West tab — reject this candidate
+  // Find the "PRICE / g." column by header text rather than a hardcoded index — this way it still
+  // works even if that column gets collapsed/hidden in the sheet (collapsed columns are still
+  // present in the CSV export, just visually hidden in the Sheets UI).
+  const headerRow = grid[headerIdx];
+  let priceColIdx = -1;
+  for(let c=0;c<headerRow.length;c++){
+    const hNorm = (headerRow[c]||'').trim().toUpperCase().replace(/\s+/g,'');
+    if(hNorm.startsWith('PRICE/G')){ priceColIdx = c; break; }
+  }
   const items = [];
   for(let i=headerIdx+1;i<grid.length;i++){
     const row = grid[i];
     const category = (row[1]||'').trim();
     const name = (row[2]||'').trim();
-    const wt = toNum(row[5]);
+    const wt = toNum(row[5]) || 0;
     const unit = (row[6]||'').trim();
+    const pricePerG = priceColIdx>=0 ? (toNum(row[priceColIdx])||0) : 0;
     if(!name) continue;
-    items.push([name, category, unit, wt||0]);
+    items.push([name, category, unit, wt, wt*pricePerG]);
   }
   return items;
 }
