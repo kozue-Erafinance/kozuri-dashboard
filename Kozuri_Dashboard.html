@@ -360,14 +360,27 @@ const GID_MENU  = '1782569096';  // MenuData (menu-item level BOM detail — fet
 const GID_YIELDLOSS = '66239261'; // YieldLoss Data — Main Item, DATE, Yield (= remaining weight snapshot per date)
 
 // ---- West (waste) data: separate spreadsheet per branch, one TAB per month (not a Month column) ----
+// Tab names have turned out to be VERY inconsistent between branches/months (e.g. "2026 : Jan",
+// "2026 :Apr", "2026:June", "2026:JULY", "July 2026" have all been seen for different months/sheets)
+// so instead of one hardcoded guess, we generate a broad set of plausible name candidates per month
+// and try them (in parallel) — first one that returns real data wins.
 const WEST_SHEET_ID = {CTW:'1iAkKxVQyk1EP7nrViVMrTu16P42TLP2khZiFCHWYk0Q', Thonglor:'1Q-m01k2iNfMNiX5nlpREXMXPU0__1OqKW4oiq0Gnbls'};
-// Tab-name guesses per month, based on the tabs visible in the screenshot (Jan–Aug confirmed;
-// Sep–Dec are a best-guess continuation of the "Month 2026" pattern used from July onward —
-// if any of these don't match the real tab name, that month's West table will just come up empty.
-const WEST_TAB_NAME = {
-  1:'2026 : Jan', 2:'2026 : FEB', 3:'2026 : March', 4:'2026 : April', 5:'2026 : May', 6:'2026 : June',
-  7:'July 2026', 8:'August 2026', 9:'September 2026', 10:'October 2026', 11:'November 2026', 12:'December 2026',
+const WEST_MONTH_FORMS = {
+  1:['Jan','JAN','January','JANUARY'], 2:['Feb','FEB','February','FEBRUARY'], 3:['Mar','MAR','March','MARCH'],
+  4:['Apr','APR','April','APRIL'], 5:['May','MAY'], 6:['Jun','JUN','June','JUNE'],
+  7:['Jul','JUL','July','JULY'], 8:['Aug','AUG','August','AUGUST'], 9:['Sep','SEP','Sept','September','SEPTEMBER'],
+  10:['Oct','OCT','October','OCTOBER'], 11:['Nov','NOV','November','NOVEMBER'], 12:['Dec','DEC','December','DECEMBER'],
 };
+function westTabCandidates(month, year='2026'){
+  const forms = WEST_MONTH_FORMS[month] || [];
+  const seps = [' : ', ' :', ':'];
+  const set = new Set();
+  forms.forEach(mv=>{
+    seps.forEach(sep=> set.add(`${year}${sep}${mv}`));   // "2026 : Jan", "2026 :Apr", "2026:June"...
+    set.add(`${mv} ${year}`);                             // "July 2026"
+  });
+  return [...set];
+}
 function westCsvUrl(sheetId, tabName){
   return `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tabName)}`;
 }
@@ -1132,19 +1145,13 @@ function buildRemainingWeightByMonth(rows){
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
 // with the real header row appearing a couple of rows down (not row 1), so we parse as a raw grid
 // and locate the header row by searching for "CATEGORY" rather than assuming header:true.
-async function fetchWestTabRows(branch, month){
-  const sheetId = WEST_SHEET_ID[branch];
-  const tabName = WEST_TAB_NAME[month];
-  if(!sheetId || !tabName) return [];
-  const res = await fetch(westCsvUrl(sheetId, tabName));
-  if(!res.ok) throw new Error(`West ${branch} เดือน ${month} (แท็บ "${tabName}") โหลดไม่สำเร็จ HTTP ${res.status}`);
-  const text = await res.text();
+function parseWestGrid(text){
   const grid = Papa.parse(text, {header:false, skipEmptyLines:true}).data;
   let headerIdx = -1;
   for(let i=0;i<grid.length;i++){
     if((grid[i][1]||'').trim().toUpperCase()==='CATEGORY'){ headerIdx = i; break; }
   }
-  if(headerIdx===-1) return []; // couldn't find the header row — tab structure differs from expected
+  if(headerIdx===-1) return null; // doesn't look like a West tab — reject this candidate
   const items = [];
   for(let i=headerIdx+1;i<grid.length;i++){
     const row = grid[i];
@@ -1157,16 +1164,34 @@ async function fetchWestTabRows(branch, month){
   }
   return items;
 }
+// Tries every candidate tab name for this branch/month in parallel; returns the rows from
+// whichever candidate is both fetchable AND actually parses as a West-shaped sheet.
+async function fetchWestTabRows(branch, month){
+  const sheetId = WEST_SHEET_ID[branch];
+  if(!sheetId) return [];
+  const candidates = westTabCandidates(month);
+  const attempts = candidates.map(tabName =>
+    fetch(westCsvUrl(sheetId, tabName))
+      .then(res => res.ok ? res.text() : Promise.reject(new Error('not ok')))
+      .then(text => {
+        const items = parseWestGrid(text);
+        if(!items || !items.length) return Promise.reject(new Error('not a West tab'));
+        return items;
+      })
+  );
+  try {
+    return await Promise.any(attempts);
+  } catch(e) {
+    console.error(`West ${branch} เดือน ${month}: ไม่พบแท็บที่ตรงกัน (ลองไปแล้ว ${candidates.length} ชื่อ) — ตารางเดือนนี้จะว่าง`);
+    return [];
+  }
+}
 async function buildWestByMonthLive(){
   const out = {CTW:{}, Thonglor:{}};
   const tasks = [];
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
-      tasks.push(
-        fetchWestTabRows(b, m)
-          .then(rows=>({b, m, rows}))
-          .catch(err=>{ console.error('West fetch failed for', b, m, WEST_TAB_NAME[m], err.message); return {b, m, rows:[]}; })
-      );
+      tasks.push(fetchWestTabRows(b, m).then(rows=>({b, m, rows})));
     }
   });
   const results = await Promise.all(tasks);
