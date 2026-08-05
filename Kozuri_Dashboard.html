@@ -967,8 +967,11 @@ async function fetchCsvRows(gid, label){
 }
 function toNum(v){
   if(v===undefined || v===null || v==='') return null;
-  const cleaned = String(v).replace(/,/g,'').trim();
-  if(cleaned==='') return null;
+  // Strip thousands separators, currency symbols (฿, $, etc.) and any other non-numeric junk,
+  // keeping digits, one decimal point, and a leading minus sign.
+  let cleaned = String(v).replace(/,/g,'').trim();
+  cleaned = cleaned.replace(/[^0-9.\-]/g,'');
+  if(cleaned==='' || cleaned==='-' || cleaned==='.') return null;
   const n = parseFloat(cleaned);
   return isNaN(n) ? null : n;
 }
@@ -1192,8 +1195,16 @@ function parseWestGrid(text){
 }
 // Master "PRICE" tab (one per branch spreadsheet, sheet name literally "PRICE") — NAME + PRICE/g.,
 // used as a lookup joined by item name against every monthly West tab's WT.
-async function fetchPriceLookup(branch){
-  const sheetId = WEST_SHEET_ID[branch];
+// Normalize an item name for matching across sheets — collapses internal whitespace runs
+// (incl. non-breaking spaces) to a single space and trims, so minor spacing differences between
+// the PRICE tab and the monthly West tabs (e.g. "Mixed Mayo Snow Crab " vs "Mixed Mayo Snow Crab")
+// don't cause a false "not found".
+function normalizeName(s){
+  return (s||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+}
+// The PRICE lookup tab only exists in the CTW spreadsheet — both branches share this ONE price list.
+async function fetchPriceLookup(){
+  const sheetId = WEST_SHEET_ID.CTW;
   if(!sheetId) return {};
   const tabNameCandidates = ['PRICE','Price','price'];
   for(const tabName of tabNameCandidates){
@@ -1216,18 +1227,17 @@ async function fetchPriceLookup(branch){
       if(headerIdx===-1) continue; // this candidate tab name loaded but didn't look like the PRICE sheet — try next
       const map = {};
       for(let i=headerIdx+1;i<grid.length;i++){
-        const name = (grid[i][nameCol]||'').trim();
+        const rawName = (grid[i][nameCol]||'').trim();
         const price = toNum(grid[i][priceCol]) || 0;
-        if(!name) continue;
-        map[name] = price;
-        map[name.toLowerCase()] = price;
+        if(!rawName) continue;
+        map[normalizeName(rawName)] = price;
       }
       return map;
     } catch(e) {
       continue;
     }
   }
-  console.error(`West ${branch}: หาแท็บ "PRICE" ไม่เจอเลย (ลองชื่อ ${tabNameCandidates.join(', ')}) — มูลค่า West จะเป็น 0 ทั้งหมด`);
+  console.error(`West: หาแท็บ "PRICE" ในชีท CTW ไม่เจอเลย (ลองชื่อ ${tabNameCandidates.join(', ')}) — มูลค่า West จะเป็น 0 ทั้งหมดทุกสาขา`);
   return {};
 }
 // Tries every candidate tab name for this branch/month in parallel; returns the rows from
@@ -1254,12 +1264,11 @@ async function fetchWestTabRows(branch, month){
 }
 async function buildWestByMonthLive(){
   const out = {CTW:{}, Thonglor:{}};
-  const priceMaps = {};
   const diag = {CTW:{priceCount:0, unmatched:new Set()}, Thonglor:{priceCount:0, unmatched:new Set()}};
-  await Promise.all(['CTW','Thonglor'].map(async b=>{
-    priceMaps[b] = await fetchPriceLookup(b);
-    diag[b].priceCount = Object.keys(priceMaps[b]).length;
-  }));
+  const priceMap = await fetchPriceLookup(); // one shared lookup for both branches
+  const priceCount = Object.keys(priceMap).length;
+  diag.CTW.priceCount = priceCount;
+  diag.Thonglor.priceCount = priceCount;
   const tasks = [];
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
@@ -1268,9 +1277,8 @@ async function buildWestByMonthLive(){
   });
   const results = await Promise.all(tasks);
   results.forEach(({b,m,rows})=>{
-    const priceMap = priceMaps[b] || {};
     out[b][m] = rows.map(([name, category, unit, wt])=>{
-      const price = priceMap[name] ?? priceMap[name.toLowerCase()] ?? 0;
+      const price = priceMap[normalizeName(name)] ?? 0;
       if(price===0 && wt>0) diag[b].unmatched.add(name);
       return [name, category, unit, wt, wt*price];
     });
