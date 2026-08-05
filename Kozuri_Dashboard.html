@@ -239,35 +239,38 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 
     <div class="section-title"><span class="num">02b</span><h2>Seasonal 6 ROLLs ที่เพิ่มขึ้น — แทนที่ SET ไหน &amp; ผลต่อรายได้</h2><span class="rule"></span></div>
     <div class="card" style="margin-bottom:18px; padding:14px 20px; font-size:12.5px; color:var(--ink-soft);">
-      <b style="color:var(--navy-900);">วิธีวิเคราะห์ (Share Shift Analysis):</b> เทียบ <b>สัดส่วน (%share)</b> ของ SET แต่ละแบบในยอดขาย ROLLS ทั้งหมด ระหว่าง
-      <b style="color:var(--navy-900);">ฐาน (เฉลี่ย ก.พ.–เม.ย.</b> ก่อนมี Seasonal) กับ <b style="color:var(--navy-900);">มิ.ย. (เดือนแรกที่ขายเต็มเดือนหลังเปิดตัว)</b>
-      — <b>ไม่รวม พ.ค.</b> ในการคำนวณ เพราะเป็นเดือนเปิดตัว (Launch Month) ขายได้แค่ 14 วัน ตัวเลขจะไม่ยุติธรรม (แต่ยังโชว์ในกราฟแนวโน้มด้านล่างเพื่อดูบริบท)<br>
-      ส่วนต่าง %share ถูกแปลงกลับเป็น "จำนวน Set ที่ย้าย" (โดยคูณกับยอดรวม ROLLS ของเดือน มิ.ย.) แล้วคูณราคาต่อ Set เพื่อดูผลกระทบต่อรายได้ — ราคาที่ใช้: Seasonal Set ฿1,190 · 4 ROLLs ฿590 · 5 ROLLs ฿790 · 6 ROLLs ฿990 · 7 ROLLs ฿1,290
+      <div style="margin-bottom:10px;">
+        <b style="color:var(--navy-900);">เทียบฐานกับเดือน:</b>
+        <span id="baselineMonthChecks" style="display:inline-flex; gap:10px; flex-wrap:wrap; margin-left:8px; vertical-align:middle;"></span>
+        <span style="margin-left:6px; color:var(--ink-soft);">(เลือกได้หลายเดือน จะเฉลี่ยให้อัตโนมัติ — เทียบกับเดือนที่เลือกไว้ด้านบนของหน้าเสมอ)</span>
+      </div>
+      <div id="shareShiftDesc"></div>
     </div>
     <div class="grid-2b">
       <div class="card">
-        <h3><span class="dot tl"></span> Thonglor — สัดส่วน %Share ของแต่ละ SET (ม.ค.–มิ.ย.)</h3>
+        <h3><span class="dot tl"></span> Thonglor — สัดส่วน %Share ของแต่ละ SET (ม.ค.–ธ.ค.)</h3>
         <div class="chart-box" style="height:260px;"><canvas id="chartSeasonalTL"></canvas></div>
         <div class="sub-caption">* พ.ค. = เดือนเปิดตัว Seasonal (ขายแค่ 14 วัน) ไม่ได้ใช้ในการคำนวณ Share Shift ด้านล่าง</div>
       </div>
       <div class="card">
-        <h3><span class="dot ctw"></span> CTW — สัดส่วน %Share ของแต่ละ SET (ม.ค.–มิ.ย.)</h3>
+        <h3><span class="dot ctw"></span> CTW — สัดส่วน %Share ของแต่ละ SET (ม.ค.–ธ.ค.)</h3>
         <div class="chart-box" style="height:260px;"><canvas id="chartSeasonalCTW"></canvas></div>
         <div class="sub-caption">* พ.ค. = เดือนเปิดตัว Seasonal (ขายแค่ 14 วัน) ไม่ได้ใช้ในการคำนวณ Share Shift ด้านล่าง</div>
       </div>
     </div>
     <div class="grid-2b" style="margin-top:18px;">
       <div class="card">
-        <h3><span class="dot tl"></span> Thonglor — Share Shift: ฐาน (ก.พ.–เม.ย.) → มิ.ย.</h3>
+        <h3><span class="dot tl"></span> Thonglor — Share Shift <span id="shareShiftTitleTL" style="font-weight:400; color:var(--ink-soft); font-size:13px;"></span></h3>
         <div id="subTL"></div>
       </div>
       <div class="card">
-        <h3><span class="dot ctw"></span> CTW — Share Shift: ฐาน (ก.พ.–เม.ย.) → มิ.ย.</h3>
+        <h3><span class="dot ctw"></span> CTW — Share Shift <span id="shareShiftTitleCTW" style="font-weight:400; color:var(--ink-soft); font-size:13px;"></span></h3>
         <div id="subCTW"></div>
       </div>
     </div>
 
     <div class="section-title"><span class="num">03</span><h2>เมนูขายดี — A La Carte &amp; เครื่องดื่ม (<span id="topMonthLabel"></span>)</h2><span class="rule"></span></div>
+    <div class="raw-note" id="categoryDiagNote" style="margin-bottom:8px;"></div>
     <div class="top-n-tabs" id="topNTabs">
       <button class="top-n-btn" data-n="5">Top 5</button>
       <button class="top-n-btn" data-n="10">Top 10</button>
@@ -292,6 +295,16 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
   <div class="page" id="page2">
 
     <div class="section-title"><span class="num">04</span><h2>Fish Yield &amp; Cost Gap — <span id="yieldMonthLabel"></span></h2><span class="rule"></span></div>
+    <div class="filter-bar" style="margin-bottom:10px;">
+      <label style="display:flex; align-items:center; gap:6px; font-size:13px; cursor:pointer;">
+        <input type="checkbox" id="excludeSauceChk"> ไม่รวมหมวด SAUCE ในตาราง West / มูลค่ารวมที่เสียไป
+      </label>
+    </div>
+    <div class="top-n-tabs" id="costGapModeTabs">
+      <button class="top-n-btn active" data-mode="full">ทั้งเดือน</button>
+      <button class="top-n-btn" data-mode="exclend">ไม่รวมปลายเดือน</button>
+      <button class="top-n-btn" data-mode="startend">+ต้นเดือน-ปลายเดือน</button>
+    </div>
     <div class="grid-2b">
       <div class="card">
         <h3><span class="dot tl"></span> Thonglor <span style="margin-left:auto;"><span class="badge-score" id="scoreTL"></span></span></h3>
@@ -306,6 +319,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
           </div>
           <div>
             <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelTL">น้ำหนักที่เหลือ</div>
+            <div style="margin-bottom:5px;" class="pct-gap-tag neg" id="pdtValueTL"></div>
             <div style="max-height:340px; overflow:auto;"><table id="pdtTL"></table></div>
           </div>
         </div>
@@ -323,6 +337,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
           </div>
           <div>
             <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelCTW">น้ำหนักที่เหลือ</div>
+            <div style="margin-bottom:5px;" class="pct-gap-tag neg" id="pdtValueCTW"></div>
             <div style="max-height:340px; overflow:auto;"><table id="pdtCTW"></table></div>
           </div>
         </div>
@@ -352,9 +367,8 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 
 <script>
 // ===================== LIVE GOOGLE SHEETS DATA SOURCE =====================
-// ยอดขาย / ซื้อปลา (Fish Yield) are fetched live from Google Sheets below.
-// West (waste) data stays as the static snapshot provided earlier (per request:
-// "west เอาข้อมูลเดิมก่อน") — swap WEST_STATIC for a live fetch later if needed.
+// ยอดขาย / ซื้อปลา (Fish Yield) / West (waste) / YieldLoss Data (remaining weight) are all
+// fetched live from Google Sheets below.
 const SHEET_ID = '1f8lHwSPLv0Pl7LVTBciu3mrrsZHmvrZg9YtDDme4rAg';
 const GID_SALES = '876116588';   // ยอดขาย
 const GID_FISH  = '614035819';   // ซื้อปลา Data (Fish Yield & Cost Gap, ingredient-level)
@@ -388,7 +402,6 @@ function westCsvUrl(sheetId, tabName){
 }
 function csvUrl(gid){ return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`; }
 
-const WEST_STATIC = {"CTW": {"1": [["Tuna", "FISH", "g", 5367.0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 2237.0, 63300.0, "g"], ["Avocado", "Side Dish", "g", 1853.0, 30.5, "g"], ["Hamachi", "FISH", "g", 575.0, 0.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 506.0, 31500.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 404.0, 27.0, "g"], ["Unagi", "FISH", "g", 344.0, 213.0, "g"], ["Hotate", "SHELL", "pc", 71.0, 559.0, "pc"], ["Snow Crab", "CRAB", "g", 60.0, 380.0, "g"], ["Ice Green Tea", "BEVERAGE", "ml", 39.3, 258000.0, "ml"], ["Hot Green Tea", "BEVERAGE", "ml", 29.5, 174500.0, "ml"], ["Lobster", "SHRIMP", "g", 27.0, 28.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 11.0, 2022.0, "pc"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 3.0, 485.0, "g"], ["Miso Soup", "Side Dish", "g", 1.0, 67.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 1.0, 3360.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 1.0, 9.0, "g"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Kizu", "FISH", "g", 0.0, 1.0, "g"], ["Salmon", "FISH", "g", 0.0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0.0, 10.0, "g"], ["Foie Gras", "FOIE GRAS", "g", 0.0, 3477.0, "g"], ["Ebiko", "ROE", "g", 0.0, 3500.0, "g"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Wasabi", "SAUCE", "g", 0.0, 750.0, "g"], ["Truffle Paste", "SAUCE", "g", 0.0, 0.0, "g"], ["Shoyu", "SAUCE", "g", 0.0, 14000.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0.0, 12500.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0.0, 0.0, "g"], ["Miso Sauce", "SAUCE", "g", 0.0, 39750.0, "g"], ["Tobiko", "ROE", "g", 0.0, 500.0, "g"], ["ไข่คิมิ", "ROE", "g", 0.0, 9.0, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0.0, 29.0, "g"], ["Syrub", "SAUCE", "g", 0.0, 2.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 88.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 900.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 4000.0, "g"], ["ขิงดอง", "Side Dish", "g", 0.0, 11.0, "g"]], "2": [["Sushi Rice", "RICE", "g", 1495.0, 86400.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 1126.0, 77.0, "g"], ["Unagi", "FISH", "g", 710.0, 103.0, "g"], ["Tobiko", "ROE", "g", 85.0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 60.0, 13.0, "g"], ["Ice Green Tea", "BEVERAGE", "ml", 35.5, 343000.0, "ml"], ["Hot Green Tea", "BEVERAGE", "ml", 30.5, 160000.0, "ml"], ["Salmon", "FISH", "g", 30.0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 30.0, 796.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "rc", 30.0, 850.0, "rc"], ["Hotate", "SHELL", "pc", 23.0, 407.0, "pc"], ["Red Shrimp", "SHRIMP", "pc", 9.0, 1245.0, "pc"], ["Tuna", "FISH", "g", 0.0, 5.0, "g"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Kizu", "FISH", "g", 0.0, 0.0, "g"], ["Hamachi", "FISH", "g", 0.0, 0.0, "g"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Fresh Truffle", "TRUFFLE", "g", 0.0, 1.0, "g"], ["Miso Sauce", "SAUCE", "g", 0.0, 30750.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0.0, 21000.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0.0, 39750.0, "g"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Foie Gras", "FOIE GRAS", "g", 0.0, 0.0, "g"], ["Ebiko", "ROE", "g", 0.0, 45.5, "g"], ["ไข่คิมิ", "ROE", "g", 0.0, 45.0, "g"], ["Wasabi", "SAUCE", "g", 0.0, 3225.0, "g"], ["Truffle Paste", "SAUCE", "g", 0.0, 300.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0.0, 600.0, "g"], ["Shoyu", "SAUCE", "g", 0.0, 496600.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 2000.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 1200.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 2850.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 241.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0.0, 6.5, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0.0, 18.0, "g"], ["Syrub", "SAUCE", "g", 0.0, 4.0, "g"], ["Miso Soup", "Side Dish", "g", 0.0, 75.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0.0, 391.0, "g"], ["Avocado", "Side Dish", "g", 0.0, 66.0, "g"], ["ขิงดอง", "Side Dish", "g", 0.0, 24.0, "g"]], "3": [["Tuna", "FISH", "g", 11446.0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 7984.0, 87600.0, "g"], ["Salmon", "FISH", "g", 979.0, 0.0, "g"], ["Hamachi", "FISH", "g", 888.0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 619.0, 688.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "rc", 600.0, 433.0, "rc"], ["Unagi", "FISH", "g", 517.0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 485.0, 116.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 340.0, 33750.0, "g"], ["Lobster", "SHRIMP", "g", 212.0, 0.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 169.0, 14000.0, "g"], ["Ebiko", "ROE", "g", 156.0, 37.2, "g"], ["Fresh Truffle", "TRUFFLE", "g", 119.0, 43.0, "g"], ["Truffle Paste", "SAUCE", "g", 61.0, 140.0, "g"], ["Hotate", "SHELL", "pc", 50.0, 0.0, "pc"], ["Ice Green Tea", "BEVERAGE", "ml", 43.0, 349000.0, "ml"], ["Avocado", "Side Dish", "g", 28.5, 2521.0, "g"], ["Hot Green Tea", "BEVERAGE", "ml", 28.0, 149000.0, "ml"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 20.0, 214.0, "g"], ["ไข่คิมิ", "ROE", "g", 20.0, 35.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 15.0, 0.0, "pc"], ["น้ำส้มข้าว", "SAUCE", "g", 9.0, 42.0, "g"], ["Miso Sauce", "SAUCE", "g", 5.0, 28500.0, "g"], ["Tobiko", "ROE", "g", 5.0, 0.0, "g"], ["Syrub", "SAUCE", "g", 2.0, 6.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 2.0, 8103.5, "g"], ["Kizu", "FISH", "g", 0.0, 0.0, "g"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0.0, 480.0, "g"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Shoyu", "SAUCE", "g", 0.0, 810000.0, "g"], ["Foie Gras", "FOIE GRAS", "g", 0.0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0.0, 900.0, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 2.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 1200.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 22.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 2000.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 300.0, "g"], ["Miso Soup", "Side Dish", "g", 0.0, 84.0, "g"], ["ขิงดอง", "Side Dish", "g", 0.0, 12.0, "g"]], "4": [["Tuna", "FISH", "g", 8527.0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 6908.0, 70800.0, "g"], ["Hamachi", "FISH", "g", 3158.0, 0.0, "g"], ["Salmon", "FISH", "g", 2676.0, 0.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 1040.0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 789.0, 56.0, "g"], ["Snow Crab", "CRAB", "g", 459.0, 354.0, "g"], ["Unagi", "FISH", "g", 199.0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 107.0, 0.0, "g"], ["Avocado", "Side Dish", "g", 62.0, 6.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "rc", 24.0, 448.0, "rc"], ["Ebiko", "ROE", "g", 15.0, 18.0, "g"], ["Ice Green Tea", "BEVERAGE", "ml", 12.0, 269000.0, "ml"], ["Hot Green Tea", "BEVERAGE", "ml", 12.0, 79000.0, "ml"], ["Hotate", "SHELL", "pc", 7.0, 0.0, "pc"], ["ไข่คิมิ", "ROE", "g", 5.0, 18.0, "g"], ["Tobiko", "ROE", "g", 5.0, 0.0, "g"], ["Miso Soup", "Side Dish", "g", 2.0, 78.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 2.0, 16500.0, "g"], ["Kizu", "FISH", "g", 2.0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 2.0, 0.0, "pc"], ["Mikandai", "FISH", "g", 0.0, 0.0, "g"], ["Shima aji", "FISH", "g", 0.0, 0.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0.0, 0.0, "g"], ["Ikura", "ROE", "g", 0.0, 0.0, "g"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Foie Gras", "FOIE GRAS", "g", 0.0, 0.0, "g"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Mehikari", "FISH", "pc", 0.0, 0.0, "pc"], ["Tiger Prawn", "SHRIMP", "pc", 0.0, 0.0, "pc"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 300.0, "g"], ["Miso Sauce", "SAUCE", "g", 0.0, 13500.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0.0, 9000.0, "g"], ["Shoyu", "SAUCE", "g", 0.0, 1000.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0.0, 480.0, "g"], ["Truffle Paste", "SAUCE", "g", 0.0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 2000.0, "g"], ["น้ำส้มข้าว แดง", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0.0, 5076.0, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0.0, 28.0, "g"], ["Syrub", "SAUCE", "g", 0.0, 0.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 60.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 0.0, "g"], ["Ponzu Sauce", "SAUCE", "g", 0.0, 0.0, "g"], ["Zuke Sauce", "SAUCE", "g", 0.0, 0.0, "g"], ["ซอสมันกุ้ง", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Jelly", "SAUCE", "g", 0.0, 0.0, "g"], ["Crab Miso", "SAUCE", "g", 0.0, 0.0, "g"], ["Aoba", "SAUCE", "g", 0.0, 0.0, "g"], ["ขิงดอง", "Side Dish", "g", 0.0, 11.0, "g"], ["Kanpyo", "Side Dish", "g", 0.0, 0.0, "g"], ["Sushi Rice Akasu", "RICE", "g", 0.0, 0.0, "g"]], "5": [["Tuna", "FISH", "g", 2581.0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 496.0, 0.0, "g"], ["Hamachi", "FISH", "g", 263.0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 255.0, 61800.0, "g"], ["Salmon", "FISH", "g", 196.0, 0.0, "g"], ["Unagi", "FISH", "g", 180.0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 70.0, 73.0, "g"], ["Lobster", "SHRIMP", "g", 60.0, 0.0, "g"], ["Avocado", "Side Dish", "g", 50.0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "rc", 30.0, 624.0, "rc"], ["Foie Gras", "FOIE GRAS", "g", 25.0, 0.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 12.0, 0.0, "g"], ["Hotate", "SHELL", "pc", 10.0, 0.0, "pc"], ["Ebiko", "ROE", "g", 10.0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 3.0, 0.0, "pc"], ["Mikandai", "FISH", "g", 0.0, 0.0, "g"], ["Mehikari", "FISH", "pc", 0.0, 0.0, "pc"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Tiger Prawn", "SHRIMP", "pc", 0.0, 0.0, "pc"], ["Kizu", "FISH", "g", 0.0, 0.0, "g"], ["Shima aji", "FISH", "g", 0.0, 0.0, "g"], ["ไข่คิมิ", "ROE", "g", 0.0, 30.0, "g"], ["Tobiko", "ROE", "g", 0.0, 0.0, "g"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Ikura", "ROE", "g", 0.0, 0.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0.0, 0.0, "g"], ["Miso Sauce", "SAUCE", "g", 0.0, 24000.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0.0, 8000.0, "g"], ["Wasabi", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 3000.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 300.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 0.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0.0, 18375.0, "g"], ["Shoyu", "SAUCE", "g", 0.0, 800800.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0.0, 0.0, "g"], ["Truffle Paste", "SAUCE", "g", 0.0, 0.0, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0.0, 26.0, "g"], ["Syrub", "SAUCE", "g", 0.0, 0.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 20.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0.0, 30000.0, "g"], ["น้ำส้มข้าว แดง", "SAUCE", "g", 0.0, 0.0, "g"], ["Ponzu Sauce", "SAUCE", "g", 0.0, 0.0, "g"], ["Aoba", "SAUCE", "g", 0.0, 0.0, "g"], ["ซอสมันกุ้ง", "SAUCE", "g", 0.0, 0.0, "g"], ["Zuke Sauce", "SAUCE", "g", 0.0, 0.0, "g"], ["Crab Miso", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Jelly", "SAUCE", "g", 0.0, 0.0, "g"], ["Miso Soup", "Side Dish", "g", 0.0, 52011.0, "g"], ["ขิงดอง", "Side Dish", "g", 0.0, 0.0, "g"], ["Ice Green Tea", "BEVERAGE", "ml", 0.0, 186000.0, "ml"], ["Hot Green Tea", "BEVERAGE", "ml", 0.0, 60000.0, "ml"]], "6": [["Sushi Rice", "RICE", "g", 4976.0, 91800.0, "g"], ["Salmon", "FISH", "g", 1118.0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 347.0, 0.0, "g"], ["Hamachi", "FISH", "g", 295.0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "rc", 180.0, 968.0, "rc"], ["Avocado", "Side Dish", "g", 51.0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 45.0, 64.0, "g"], ["Unagi", "FISH", "g", 33.0, 0.0, "g"], ["Tuna", "FISH", "g", 30.0, 0.0, "g"], ["Hotate", "SHELL", "pc", 16.0, 0.0, "pc"], ["Red Shrimp", "SHRIMP", "pc", 14.0, 0.0, "pc"], ["ขิงดอง", "Side Dish", "g", 10.0, 0.0, "g"], ["กุ้งลายเสือ", "OTHER", "pc", 7.0, 0.0, "pc"], ["Kizu", "FISH", "g", 2.0, 0.0, "g"], ["Ice Green Tea", "BEVERAGE", "ml", 1.0, 301000.0, "ml"], ["Hot Green Tea", "BEVERAGE", "ml", 1.0, 101000.0, "ml"], ["Blue Crab", "CRAB", "g", 0.0, 0.0, "g"], ["Shima aji", "FISH", "g", 0.0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 0.0, 0.0, "g"], ["Mehikari", "FISH", "pc", 0.0, 0.0, "pc"], ["Tiger Prawn", "SHRIMP", "pc", 0.0, 0.0, "pc"], ["Mikandai", "FISH", "g", 0.0, 0.0, "g"], ["Ikura", "ROE", "g", 0.0, 0.0, "g"], ["ไข่คิมิ", "ROE", "g", 0.0, 42.0, "g"], ["Tobiko", "ROE", "g", 0.0, 0.0, "g"], ["Ebiko", "ROE", "g", 0.0, 0.0, "g"], ["Foie Gras", "FOIE GRAS", "g", 0.0, 0.0, "g"], ["Uni Murasaki", "SHELL", "roll", 0.0, 0.0, "roll"], ["Uni Bafun", "SHELL", "roll", 0.0, 0.0, "roll"], ["Fresh Truffle", "TRUFFLE", "g", 0.0, 0.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0.0, 7000.0, "g"], ["Miso Sauce", "SAUCE", "g", 0.0, 16125.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0.0, 12000.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0.0, 19500.0, "g"], ["Shoyu", "SAUCE", "g", 0.0, 6800.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0.0, 0.0, "g"], ["Truffle Paste", "SAUCE", "g", 0.0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0.0, 19.5, "g"], ["ไซเกียว", "SAUCE", "g", 0.0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0.0, 39.0, "g"], ["Syrub", "SAUCE", "g", 0.0, 0.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0.0, 147.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Sauce Sweet RED", "SAUCE", "g", 0.0, 1260.0, "g"], ["น้ำส้มข้าว แดง", "SAUCE", "g", 0.0, 6.0, "g"], ["ซอสมันกุ้ง", "SAUCE", "g", 0.0, 0.0, "g"], ["Zuke Sauce", "SAUCE", "g", 0.0, 5.0, "g"], ["Crab Miso", "SAUCE", "g", 0.0, 0.0, "g"], ["Yuzu Jelly", "SAUCE", "g", 0.0, 0.0, "g"], ["Ponzu Sauce", "SAUCE", "g", 0.0, 0.0, "g"], ["Aoba", "SAUCE", "g", 0.0, 0.0, "g"], ["Miso Soup", "Side Dish", "g", 0.0, 72.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0.0, 0.0, "g"]]}, "Thonglor": {"1": [["Tuna", "FISH", "g", 0, 0.0, "g"], ["Salmon", "FISH", "g", 0, 0.0, "g"], ["Hamachi", "FISH", "g", 0, 0.0, "g"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 0, 0.0, "pc"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 0, 0.0, "g"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 0.0, "g"], ["Hotate", "SHELL", "pc", 0, 0.0, "pc"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Foie Gras", "FOIE GRAS", "g", 0, 0.0, "g"], ["Ebiko", "ROE", "g", 0, 0.0, "g"], ["Tobiko", "ROE", "g", 0, 0.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 0.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 1.5, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 0.0, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 2.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 0.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 0.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0, 0.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 0, 7.0, "g"], ["Avocado", "OTHER", "g", 0, 0.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 12.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 2.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 0, 2.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 4.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 2.0, "g"]], "2": [["Tuna", "FISH", "g", 0, 0.0, "g"], ["Salmon", "FISH", "g", 0, 0.0, "g"], ["Hamachi", "FISH", "g", 0, 0.0, "g"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 0, 0.0, "pc"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 0, 0.0, "g"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 0.0, "g"], ["Hotate", "SHELL", "pc", 0, 0.0, "pc"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Foie Gras", "FOIE GRAS", "g", 0, 0.0, "g"], ["Ebiko", "ROE", "g", 0, 0.0, "g"], ["Tobiko", "ROE", "g", 0, 0.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 0.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 1.5, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 0.0, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 2.0, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 0.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 0.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0, 0.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 0.0, "g"], ["Sushi Rice", "RICE", "g", 0, 7.0, "g"], ["Avocado", "OTHER", "g", 0, 0.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 12.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 2.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 0, 2.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 4.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 2.0, "g"]], "3": [["Sushi Rice", "RICE", "g", 576, 55.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 136, 23.0, "g"], ["Hamachi", "FISH", "g", 42, 0.0, "g"], ["Hotate", "SHELL", "pc", 13, 0.0, "pc"], ["Salmon", "FISH", "g", 0, 0.0, "g"], ["Tuna", "FISH", "g", 0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 0, 0.0, "pc"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 0, 72.0, "g"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 240.0, "g"], ["Tobiko", "ROE", "g", 0, 1.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 0.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 5.3, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 25.0, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 10.5, "g"], ["Foie Gras", "FOIE GRAS", "g", 0, 0.0, "g"], ["Ebiko", "ROE", "g", 0, 18.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 2.5, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0, 4.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 8.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0, 2.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 104.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 0, 21.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 14.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 0.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 9.5, "g"], ["Miso Soup", "Side Dish", "g", 0, 23.5, "g"], ["Miso Sauce", "SAUCE", "g", 0, 5.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0, 3.0, "g"], ["Avocado", "Side Dish", "g", 0, 16.0, "g"], ["Kimi", "ROE", "g", 0, 84.0, "g"]], "4": [["Miso Soup", "Side Dish", "g", 3804, 18.5, "g"], ["Tuna", "FISH", "g", 2768, 0.0, "g"], ["Sushi Rice", "RICE", "g", 2465, 46.0, "g"], ["Hamachi", "FISH", "g", 740, 0.0, "g"], ["Miso Sauce", "SAUCE", "g", 200, 5.5, "g"], ["Salmon", "FISH", "g", 142, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 2, 0.0, "pc"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 0, 24.0, "g"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 184.0, "g"], ["Hotate", "SHELL", "pc", 0, 0.0, "pc"], ["Tobiko", "ROE", "g", 0, 17.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 7.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 7.5, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 7.0, "g"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Foie Gras", "FOIE GRAS", "g", 0, 0.0, "g"], ["Ebiko", "ROE", "g", 0, 12.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 1.5, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 1.5, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 10.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 5.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0, 3.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 0, 10.5, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 10.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 42.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 0, 14.5, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 8.5, "g"], ["น้ำดาชิ", "SAUCE", "g", 0, 5.0, "g"], ["Avocado", "Side Dish", "g", 0, 0.0, "g"], ["Kimi", "ROE", "g", 0, 27.0, "g"]], "5": [["Sushi Rice", "RICE", "g", 4022, 51.0, "g"], ["Tuna", "FISH", "g", 2768, 0.0, "g"], ["Miso Soup", "SAUCE", "g", 1952, 30.0, "g"], ["Hamachi", "FISH", "g", 419, 0.0, "g"], ["Hotate", "SHELL", "pc", 11, 0.0, "pc"], ["Shima aji", "FISH", "g", 0, 0.0, "g"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Mikandai", "FISH", "g", 0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Tiger Prawn", "SHRIMP", "pc", 0, 0.0, "pc"], ["Mehikari", "FISH", "pc", 0, 0.0, "pc"], ["Red Shrimp", "SHRIMP", "pc", 0, 0.0, "pc"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 174.0, "g"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Foie Gras", "FOIE GRAS", "g", 0, 0.0, "g"], ["Ebiko", "ROE", "g", 0, 41.0, "g"], ["Snow Crab", "CRAB", "g", 0, 144.0, "g"], ["Salmon", "FISH", "g", 0, 0.0, "g"], ["Ikura", "ROE", "g", 0, 0.0, "g"], ["Tobiko", "ROE", "g", 0, 0.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 7.5, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 11.5, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 0.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 1.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 0, 12.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 16.0, "g"], ["Wasabi", "SAUCE", "g", 0, 4.0, "g"], ["Kanpyo", "Side Dish", "g", 0, 0.0, "g"], ["Sushi Rice Akasu", "RICE", "g", 0, 0.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0, 0.0, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 25.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 48.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 15.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 0.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 0, 21.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 9.0, "g"], ["Miso Sauce", "SAUCE", "g", 0, 4.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0, 4.5, "g"], ["น้ำส้มข้าว แดง", "SAUCE", "g", 0, 0.0, "g"], ["Ponzu Sauce", "SAUCE", "g", 0, 0.0, "g"], ["Aoba", "SAUCE", "g", 0, 0.0, "g"], ["Yuzu Jelly", "SAUCE", "g", 0, 0.0, "g"], ["Crab Miso", "SAUCE", "g", 0, 0.0, "g"], ["Zuke Sauce", "SAUCE", "g", 0, 0.0, "g"], ["ซอสมันกุ้ง", "SAUCE", "g", 0, 0.0, "g"], ["Avocado", "Side Dish", "g", 0, 0.0, "g"], ["Kimi", "ROE", "g", 0, 33.0, "g"]], "6": [["Sushi Rice", "RICE", "g", 5480, 44.0, "g"], ["Tuna", "FISH", "g", 3495, 0.0, "g"], ["Miso Soup", "Side Dish", "g", 680, 26.5, "g"], ["Hamachi", "FISH", "g", 658, 0.0, "g"], ["Kozuri Shoyu", "SAUCE", "g", 42, 15.0, "g"], ["แป้งเทมปุระ", "Side Dish", "g", 28, 5.0, "g"], ["Salmon", "FISH", "g", 27, 0.0, "g"], ["Foie Gras", "FOIE GRAS", "g", 20, 0.0, "g"], ["Hotate", "SHELL", "pc", 2, 0.0, "pc"], ["Unagi", "FISH", "g", 0, 0.0, "g"], ["Lobster", "SHRIMP", "g", 0, 0.0, "g"], ["Red Shrimp", "SHRIMP", "pc", 0, 0.0, "pc"], ["Blue Crab", "CRAB", "g", 0, 0.0, "g"], ["Snow Crab", "CRAB", "g", 0, 133.0, "g"], ["Tobiko", "ROE", "g", 0, 0.0, "g"], ["Fresh Truffle", "TRUFFLE", "g", 0, 0.0, "g"], ["Seikyo", "SAUCE", "g", 0, 1.0, "g"], ["Spicy Mentaiko", "SAUCE", "g", 0, 6.0, "g"], ["Mixed Mayo Snow Crab", "CRAB", "g", 0, 48.0, "g"], ["Uni Bafun", "SHELL", "r", 0, 0.0, "r"], ["Uni Murasaki", "SHELL", "r", 0, 0.0, "r"], ["Ebiko", "ROE", "g", 0, 7.0, "g"], ["Shoyu Truffle", "SAUCE", "g", 0, 1.5, "g"], ["Yuzu Kosho", "SAUCE", "g", 0, 0.0, "g"], ["Yuzu Sauce", "SAUCE", "g", 0, 10.5, "g"], ["Yuzu Miso", "SAUCE", "g", 0, 6.0, "g"], ["ขิงดอง", "Side Dish", "g", 0, 2.0, "g"], ["แผ่นแป้งเวียดนาม", "Side Dish", "g", 0, 0.0, "g"], ["Wasabi", "SAUCE", "g", 0, 1.0, "g"], ["Truffle Paste", "SAUCE", "g", 0, 0.0, "g"], ["น้ำส้มข้าว", "SAUCE", "g", 0, 12.0, "g"], ["ซอสผสมปู", "SAUCE", "g", 0, 77.0, "g"], ["ซอสล็อบเตอร์", "SAUCE", "g", 0, 1.0, "g"], ["Soft Cream Cheese", "SAUCE", "g", 0, 4.0, "g"], ["Miso Sauce", "SAUCE", "g", 0, 12.0, "g"], ["น้ำดาชิ", "SAUCE", "g", 0, 4.0, "g"], ["Avocado", "Side Dish", "g", 0, 0.0, "g"], ["Kimi", "ROE", "g", 0, 54.0, "g"]]}};
 const MON_LABELS = {1:'ม.ค.',2:'ก.พ.',3:'มี.ค.',4:'เม.ย.',5:'พ.ค.',6:'มิ.ย.',7:'ก.ค.',8:'ส.ค.',9:'ก.ย.',10:'ต.ค.',11:'พ.ย.',12:'ธ.ค.'};
 const MON_TH_TO_NUM = {'มกราคม':1,'กุมภาพันธ์':2,'มีนาคม':3,'เมษายน':4,'พฤษภาคม':5,'มิถุนายน':6};
 const MONTHS = [1,2,3,4,5,6,7,8,9,10,11,12];
@@ -476,6 +489,7 @@ function populateMonthDropdown(latestMonth){
   monthSel.innerHTML = MONTHS.map(m=>`<option value="${m}" ${m===latestMonth?'selected':''}>${MON_LABELS[m]} 2026${m===latestMonth?' (ล่าสุด)':''}</option>`).join('');
 }
 populateMonthDropdown(6); // placeholder until real data loads and we detect the actual latest month
+initBaselineChecks();
 monthSel.addEventListener('change', ()=>{ currentMonth = parseInt(monthSel.value); renderAll(); });
 
 // ---------- KPI ----------
@@ -719,18 +733,50 @@ function buildSeasonalTimeline(){
 }
 
 // ---------- Share Shift Analysis: baseline (Feb-Apr avg) -> June ----------
-function buildSubstitution(){
-  buildShareShiftForBranch('subTL', 'Thonglor', 'tl');
-  buildShareShiftForBranch('subCTW', 'CTW', 'ctw');
+let shareShiftBaselineMonths = [];
+function initBaselineChecks(){
+  const wrap = document.getElementById('baselineMonthChecks');
+  wrap.innerHTML = MONTHS.map(m=>`
+    <label style="display:inline-flex; align-items:center; gap:3px; font-weight:400; cursor:pointer;">
+      <input type="checkbox" class="baselineMonthChk" value="${m}"> ${MON_LABELS[m]}
+    </label>`).join('');
+  wrap.querySelectorAll('.baselineMonthChk').forEach(chk=>{
+    chk.addEventListener('change', ()=>{
+      shareShiftBaselineMonths = [...wrap.querySelectorAll('.baselineMonthChk:checked')].map(c=>parseInt(c.value));
+      if(DATA) buildSubstitution();
+    });
+  });
 }
-function buildShareShiftForBranch(elId, branch, colorClass){
+function buildSubstitution(){
+  // Default baseline (only applied once, before the user has picked anything): the month right
+  // before whatever's currently selected — a natural "vs last month" starting point.
+  if(!shareShiftBaselineMonths.length){
+    const def = Math.max(1, currentMonth-1);
+    shareShiftBaselineMonths = [def];
+    const wrap = document.getElementById('baselineMonthChecks');
+    const chk = wrap.querySelector(`.baselineMonthChk[value="${def}"]`);
+    if(chk) chk.checked = true;
+  }
+  const analysis = buildShareShiftAnalysis(DATA.roll_table_by_month, shareShiftBaselineMonths, currentMonth);
+  const baselineLabel = shareShiftBaselineMonths.map(m=>MON_LABELS[m]).join('+');
+  const targetLabel = MON_LABELS[currentMonth];
+  document.getElementById('shareShiftTitleTL').textContent = `: ฐาน (${baselineLabel}) → ${targetLabel}`;
+  document.getElementById('shareShiftTitleCTW').textContent = `: ฐาน (${baselineLabel}) → ${targetLabel}`;
+  document.getElementById('shareShiftDesc').innerHTML =
+    `<b style="color:var(--navy-900);">วิธีวิเคราะห์ (Share Shift Analysis):</b> เทียบ <b>สัดส่วน (%share)</b> ของ SET แต่ละแบบในยอดขาย ROLLS ทั้งหมด ระหว่าง `
+    + `<b style="color:var(--navy-900);">ฐาน (${shareShiftBaselineMonths.length>1?'เฉลี่ย ':''}${baselineLabel})</b> กับ <b style="color:var(--navy-900);">${targetLabel}</b><br>`
+    + `ส่วนต่าง %share ถูกแปลงกลับเป็น "จำนวน Set ที่ย้าย" (โดยคูณกับยอดรวม ROLLS ของเดือน ${targetLabel}) แล้วคูณราคาต่อ Set เพื่อดูผลกระทบต่อรายได้ — ราคาที่ใช้: Seasonal Set ฿1,190 · 4 ROLLs ฿590 · 5 ROLLs ฿790 · 6 ROLLs ฿990 · 7 ROLLs ฿1,290`;
+  buildShareShiftForBranch('subTL', 'Thonglor', 'tl', analysis, targetLabel);
+  buildShareShiftForBranch('subCTW', 'CTW', 'ctw', analysis, targetLabel);
+}
+function buildShareShiftForBranch(elId, branch, colorClass, analysis, targetLabel){
   const el = document.getElementById(elId);
-  const a = DATA.share_shift_analysis[branch];
+  const a = analysis[branch];
   const isGood = a.net_impact >= 0;
   const revTableId = 'revTable' + (colorClass==='tl' ? 'TL' : 'CTW');
 
   el.innerHTML = `
-    <div class="sub-caption" style="margin-bottom:10px;">ยอด ROLLS รวมเดือน มิ.ย. = ${a.june_total} Set เทียบกับฐาน (เฉลี่ย ก.พ.–เม.ย. = ${a.baseline_total.toFixed(0)} Set/เดือน) — Δ pp = ส่วนแบ่งที่เปลี่ยนไป (+เขียว = เพิ่มขึ้น, -แดง = ลดลง)</div>
+    <div class="sub-caption" style="margin-bottom:10px;">ยอด ROLLS รวมเดือน ${targetLabel} = ${a.june_total} Set เทียบกับฐาน (${a.baseline_total.toFixed(0)} Set/เดือน) — Δ pp = ส่วนแบ่งที่เปลี่ยนไป (+เขียว = เพิ่มขึ้น, -แดง = ลดลง)</div>
     <table class="rev-table" id="${revTableId}"></table>
   `;
 
@@ -738,7 +784,7 @@ function buildShareShiftForBranch(elId, branch, colorClass){
     {label:'SET', key:r=>r.type, numeric:false},
     {label:'ราคา', key:r=>r.price, numeric:true},
     {label:'Share ฐาน', key:r=>r.baseline_share, numeric:true},
-    {label:'Share มิ.ย.', key:r=>r.june_share, numeric:true},
+    {label:`Share ${targetLabel}`, key:r=>r.june_share, numeric:true},
     {label:'Δ pp', key:r=>r.share_shift_pp, numeric:true},
     {label:'Qty Shift', key:r=>r.qty_shift, numeric:true},
     {label:'ผลต่อรายได้', key:r=>r.revenue_impact, numeric:true},
@@ -767,6 +813,16 @@ function buildTopItems(m){
   rankList('rankAlcCTW', filterAlcType(DATA.top_alc_by_month.CTW[m]||[]), 'ctw');
   rankList('rankBevTL', DATA.top_bev_by_month.Thonglor[m]||[], 'tl');
   rankList('rankBevCTW', DATA.top_bev_by_month.CTW[m]||[], 'ctw');
+  const diagEl = document.getElementById('categoryDiagNote');
+  const diag = window.__categoryDiag || {CTW:[], Thonglor:[]};
+  const fmtPairs = arr => arr.slice(0,8).map(([code,count])=>`"${code}"×${count}`).join(', ');
+  if((diag.CTW||[]).length || (diag.Thonglor||[]).length){
+    diagEl.innerHTML = 'รหัส/หมวดที่ไม่เข้า Drinks หรือ A La Carte (คงค่าเดิมไว้ ไม่ได้แปลว่าผิด แค่ไม่ถูกจัดกลุ่ม — ตัวเลขหลัง × คือจำนวนแถวทั้งหมดในเดือนที่เลือกไว้ตอนโหลดหน้า):'
+      + ((diag.CTW||[]).length ? ` CTW: ${fmtPairs(diag.CTW)}` : '')
+      + ((diag.Thonglor||[]).length ? ` · Thonglor: ${fmtPairs(diag.Thonglor)}` : '');
+  } else {
+    diagEl.textContent = '';
+  }
 }
 function filterAlcType(rows){
   if(alcTypeFilter==='all') return rows;
@@ -806,6 +862,17 @@ document.querySelectorAll('#alcTypeTabs .top-n-btn').forEach(btn=>{
     if(DATA) buildTopItems(currentMonth);
   });
 });
+document.getElementById('excludeSauceChk').addEventListener('change', ()=>{
+  if(DATA) buildYield(currentMonth);
+});
+document.querySelectorAll('#costGapModeTabs .top-n-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('#costGapModeTabs .top-n-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    costGapMode = btn.dataset.mode;
+    if(DATA) buildYield(currentMonth);
+  });
+});
 
 // ---------- Yield / Cost gap (depends on month) ----------
 const LAST_DAY_OF_MONTH = {1:31,2:28,3:31,4:30,5:31,6:30,7:31,8:31,9:30,10:31,11:30,12:31};
@@ -813,32 +880,62 @@ function lastDayLabel(m){
   const day = LAST_DAY_OF_MONTH[m] || 30;
   return `${String(day).padStart(2,'0')}/${String(m).padStart(2,'0')}/2026`;
 }
+let costGapMode = 'full'; // 'full' | 'exclend' | 'startend'
+// Recomputes Actual/Weight Gap/Cost Gap using "remaining weight" (end-of-month stock) matched by
+// item name, per the selected mode:
+//   full     — unchanged (Actual as reported)
+//   exclend  — Adjusted Actual = Actual − (this month's end-of-month remaining weight)
+//   startend — Adjusted Actual = Actual − (this month's end remaining) + (previous month's end remaining)
+function adjustYieldItems(items, branch, month, mode){
+  if(mode==='full' || !items.length) return {items, costGapTotal: items.reduce((s,it)=>s+it[4],0)};
+  const endMap = {};
+  (DATA.remaining_weight_by_month[branch][month]||[]).forEach(([name,weight])=>{ endMap[normalizeName(name)] = weight; });
+  const prevEndMap = {};
+  if(mode==='startend'){
+    (DATA.remaining_weight_by_month[branch][month-1]||[]).forEach(([name,weight])=>{ prevEndMap[normalizeName(name)] = weight; });
+  }
+  let costGapTotal = 0;
+  const adjItems = items.map(it=>{
+    const [name, theoretical, actual, weightGap, costGap, unit, updated, unitCost] = it;
+    const endW = endMap[normalizeName(name)] || 0;
+    const prevEndW = mode==='startend' ? (prevEndMap[normalizeName(name)] || 0) : 0;
+    const adjActual = actual - endW + prevEndW;
+    const adjWeightGap = Math.round((theoretical-adjActual)*10)/10;
+    const adjCostGap = Math.round(adjWeightGap*(unitCost||0));
+    costGapTotal += adjCostGap;
+    return [name, theoretical, adjActual, adjWeightGap, adjCostGap, unit, updated, unitCost];
+  });
+  return {items:adjItems, costGapTotal};
+}
 function buildYield(m){
   document.getElementById('yieldMonthLabel').textContent = MON_LABELS[m] + ' 2026';
+  const excludeSauce = document.getElementById('excludeSauceChk').checked;
   const tl = DATA.yield_summary_by_month.Thonglor[m];
   const ctw = DATA.yield_summary_by_month.CTW[m];
-  yieldTable('tableYieldTL', tl ? tl.items : []);
-  yieldTable('tableYieldCTW', ctw ? ctw.items : []);
+  const tlAdj = tl ? adjustYieldItems(tl.items, 'Thonglor', m, costGapMode) : {items:[], costGapTotal:0};
+  const ctwAdj = ctw ? adjustYieldItems(ctw.items, 'CTW', m, costGapMode) : {items:[], costGapTotal:0};
+  yieldTable('tableYieldTL', tlAdj.items);
+  yieldTable('tableYieldCTW', ctwAdj.items);
   document.getElementById('scoreTL').textContent = (tl && tl.score!==null && tl.score!==undefined) ? ('SCORE ' + tl.score.toFixed(1)) : 'ไม่มีข้อมูล';
   document.getElementById('scoreCTW').textContent = (ctw && ctw.score!==null && ctw.score!==undefined) ? ('SCORE ' + ctw.score.toFixed(1)) : 'ไม่มีข้อมูล';
   const gapTLel = document.getElementById('gapTL');
   const gapCTWel = document.getElementById('gapCTW');
-  gapTLel.textContent = tl ? fmtNum(tl.cost_gap_total) : '-';
-  gapTLel.className = 'gap-value ' + (tl ? (tl.cost_gap_total<0?'neg':(tl.cost_gap_total>0?'pos':'zero')) : 'zero');
-  gapCTWel.textContent = ctw ? fmtNum(ctw.cost_gap_total) : '-';
-  gapCTWel.className = 'gap-value ' + (ctw ? (ctw.cost_gap_total<0?'neg':(ctw.cost_gap_total>0?'pos':'zero')) : 'zero');
+  gapTLel.textContent = tl ? fmtNum(tlAdj.costGapTotal) : '-';
+  gapTLel.className = 'gap-value ' + (tl ? (tlAdj.costGapTotal<0?'neg':(tlAdj.costGapTotal>0?'pos':'zero')) : 'zero');
+  gapCTWel.textContent = ctw ? fmtNum(ctwAdj.costGapTotal) : '-';
+  gapCTWel.className = 'gap-value ' + (ctw ? (ctwAdj.costGapTotal<0?'neg':(ctwAdj.costGapTotal>0?'pos':'zero')) : 'zero');
   const pctGapTLel = document.getElementById('pctGapTL');
   const pctGapCTWel = document.getElementById('pctGapCTW');
-  function setPctGap(el, obj){
-    if(!obj || obj.pct_cost_gap===null || obj.pct_cost_gap===undefined){ el.textContent=''; el.className='pct-gap-tag'; return; }
-    const v = obj.pct_cost_gap;
+  function setPctGap(el, obj, costGapTotal){
+    if(!obj || !obj.total_theo_cost_value){ el.textContent=''; el.className='pct-gap-tag'; return; }
+    const v = Math.round(costGapTotal/obj.total_theo_cost_value*1000)/10;
     el.textContent = '%Cost Gap ' + (v>=0?'+':'') + v.toFixed(1) + '%';
     el.className = 'pct-gap-tag ' + (v<0?'neg':(v>0?'pos':'zero'));
   }
-  setPctGap(pctGapTLel, tl);
-  setPctGap(pctGapCTWel, ctw);
-  const westTLTotal = westTable('westTL', DATA.west_by_month.Thonglor[m] || []);
-  const westCTWTotal = westTable('westCTW', DATA.west_by_month.CTW[m] || []);
+  setPctGap(pctGapTLel, tl, tlAdj.costGapTotal);
+  setPctGap(pctGapCTWel, ctw, ctwAdj.costGapTotal);
+  const westTLTotal = westTable('westTL', DATA.west_by_month.Thonglor[m] || [], excludeSauce);
+  const westCTWTotal = westTable('westCTW', DATA.west_by_month.CTW[m] || [], excludeSauce);
   document.getElementById('westValueTL').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westTLTotal);
   document.getElementById('westValueCTW').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westCTWTotal);
   function renderWestDiag(elId, branch){
@@ -857,11 +954,14 @@ function buildYield(m){
   const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
   document.getElementById('pdtLabelTL').textContent = dateLabel;
   document.getElementById('pdtLabelCTW').textContent = dateLabel;
-  pdtTable('pdtTL', DATA.remaining_weight_by_month.Thonglor[m] || []);
-  pdtTable('pdtCTW', DATA.remaining_weight_by_month.CTW[m] || []);
+  const pdtTLTotal = pdtTable('pdtTL', DATA.remaining_weight_by_month.Thonglor[m] || []);
+  const pdtCTWTotal = pdtTable('pdtCTW', DATA.remaining_weight_by_month.CTW[m] || []);
+  document.getElementById('pdtValueTL').textContent = 'มูลค่ารวม ฿' + fmtNum(pdtTLTotal);
+  document.getElementById('pdtValueCTW').textContent = 'มูลค่ารวม ฿' + fmtNum(pdtCTWTotal);
 }
-function westTable(id, rows){
-  const filtered = rows.filter(r => r[3] > 0);
+function westTable(id, rows, excludeSauce){
+  let filtered = rows.filter(r => r[3] > 0);
+  if(excludeSauce) filtered = filtered.filter(r => (r[1]||'').trim().toUpperCase()!=='SAUCE');
   const headers = [
     {label:'รายการ', key:r=>r[0], numeric:false},
     {label:'Waste (WT)', key:r=>r[3], numeric:true},
@@ -877,15 +977,22 @@ function westTable(id, rows){
 }
 function pdtTable(id, rows){
   // rows: [item, weight] — from YieldLoss Data sheet (Main Item, DATE, Yield), matched to the last day of the selected month
+  const priceMap = window.__westPriceMap || {};
+  const withValue = rows.map(([name, weight])=>{
+    const price = priceMap[normalizeName(name)] ?? 0;
+    return [name, weight, weight*price];
+  });
   const headers = [
     {label:'รายการ', key:r=>r[0], numeric:false},
     {label:'น้ำหนักที่เหลือ', key:r=>r[1], numeric:true},
+    {label:'มูลค่า', key:r=>r[2], numeric:true},
   ];
   const formatRow = r=>{
-    const [name, weight] = r;
-    return `<tr><td>${name}</td><td class="num-cell">${fmtNum(weight)}</td></tr>`;
+    const [name, weight, value] = r;
+    return `<tr><td>${name}</td><td class="num-cell">${fmtNum(weight)}</td><td class="num-cell">฿${fmtNum(value||0)}</td></tr>`;
   };
-  renderSortableTable(id, headers, rows, formatRow, 1, 'desc');
+  renderSortableTable(id, headers, withValue, formatRow, 1, 'desc');
+  return withValue.reduce((s,r)=>s+(r[2]||0), 0);
 }
 function yieldTable(id, items){
   const headers = [
@@ -948,6 +1055,7 @@ function renderAll(){
   buildRolls(currentMonth);
   buildTopItems(currentMonth);
   buildYield(currentMonth);
+  buildSubstitution();
   renderItemTable();
 }
 
@@ -985,18 +1093,35 @@ function toMonthNum(v){
 //   Drinks: รหัส starts with b10 / sk / sd / ds / drinks / sake
 //   A La Carte: รหัส starts with pr1 / r1 / sp
 //   ELSE: รหัส itself (unchanged)
-function categorizeCode(codeRaw){
-  const c = (codeRaw||'').toLowerCase().trim();
-  if(c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('drinks') || c.startsWith('sake') || c.startsWith('sm') || c.startsWith('smoothie')) return 'Drinks';
+// Category grouping IS branch-specific: CTW's รหัส column holds short alphanumeric product codes
+// (e.g. "R1001", "PR1001"), while Thonglor's รหัส column holds literal category text
+// (e.g. "A La Carte", "Drinks"). Each branch gets its own matching rules below rather than one
+// shared rule set, since applying CTW's code-prefix rules to Thonglor (or vice versa) is exactly
+// what caused Thonglor's "r1"-prefixed values to be missed before.
+// (Diagnostics on what falls through uncategorized are computed once, after `sales` is built —
+// see the block right after normalizeSalesRows() in loadAllDataAndInit.)
+function categorizeCode(codeRaw, branch){
+  const raw = (codeRaw||'').trim();
+  const c = raw.toLowerCase();
+  if(branch==='Thonglor'){
+    // Thonglor's own literal-text conventions, PLUS the full set of CTW's code-prefix rules
+    // (in case some Thonglor items also use CTW-style short codes rather than category text).
+    if(c==='drinks' || c==='sake' || c==='smoothie' || c.startsWith('drinks') || c.startsWith('sake') || c.startsWith('smoothie')
+       || c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('sm')) return 'Drinks';
+    if(c==='a la carte' || c==='alacarte' || c.startsWith('a la carte') || c.startsWith('r1') || c.startsWith('pr1') || c.startsWith('sp')) return 'A La Carte';
+    return raw;
+  }
+  // CTW (and any other branch, as a sane default)
+  if(c.startsWith('b10') || c.startsWith('sk') || c.startsWith('sd') || c.startsWith('ds') || c.startsWith('sm')) return 'Drinks';
   if(c.startsWith('pr1') || c.startsWith('r1') || c.startsWith('sp')) return 'A La Carte';
-  return codeRaw;
+  return raw;
 }
 function normalizeSalesRows(raw){
   return raw.map(r=>{
     const branch = (r['Branch']||'').trim();
     const month = toMonthNum(r['Month']);
     const codeRaw = (r['รหัส']||'').trim();
-    const category = categorizeCode(codeRaw);
+    const category = categorizeCode(codeRaw, branch);
     return {
       change: toNum(r['Change']),
       pct_change: (r['%Change']!==undefined && String(r['%Change']).trim()!=='') ? String(r['%Change']).trim() : null,
@@ -1288,6 +1413,7 @@ async function buildWestByMonthLive(){
     console.log(`West ${b}: price lookup มี ${diag[b].priceCount} รายการ | รายการที่มี waste แต่หาราคาไม่เจอ: ${u.length} รายการ`, u.slice(0,15));
   });
   window.__westDiag = diag; // for on-screen display
+  window.__westPriceMap = priceMap; // shared with the "remaining weight" (PDT) table's value column
   return out;
 }
 const MONTH_ABBR = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'};
@@ -1311,12 +1437,13 @@ function buildYieldSummaryByMonth(fish, latestDateInfo){
       if(!rows.length) continue;
       let totalTheoCostValue = 0;
       const items = rows.map(r=>{
-        const theoCostValue = r.unit_price ? (r.theoretical * r.price_per_unit / r.unit_price) : 0;
+        const unitCost = r.unit_price ? (r.price_per_unit / r.unit_price) : 0; // currency per native unit (g/pc/etc)
+        const theoCostValue = r.theoretical * unitCost;
         totalTheoCostValue += theoCostValue;
         const key = (latestDateInfo.hasBranch ? (r.item+'|'+b) : r.item) + '|' + m;
         const found = latestDateInfo.map[key];
         const updated = found ? (found.day + MONTH_ABBR[found.mo]) : '-';
-        return [r.item, r.theoretical, r.actual, Math.round((r.theoretical-r.actual)*10)/10, Math.round(r.cost_gap), r.unit||'-', updated];
+        return [r.item, r.theoretical, r.actual, Math.round((r.theoretical-r.actual)*10)/10, Math.round(r.cost_gap), r.unit||'-', updated, unitCost];
       });
       const costGapTotal = Math.round(rows.reduce((s,r)=>s+r.cost_gap,0));
       const pctCostGap = totalTheoCostValue ? Math.round(costGapTotal/totalTheoCostValue*1000)/10 : null;
@@ -1324,6 +1451,7 @@ function buildYieldSummaryByMonth(fish, latestDateInfo){
         score: rows[0].score,
         cost_gap_total: costGapTotal,
         pct_cost_gap: pctCostGap,
+        total_theo_cost_value: totalTheoCostValue,
         items
       };
     }
@@ -1356,8 +1484,7 @@ function buildKpiByMonth(monthlySales, yieldSummaryByMonth){
   });
   return out;
 }
-function buildShareShiftAnalysis(rollTableByMonth){
-  const BASELINE_MONTHS=[2,3,4], TARGET=6;
+function buildShareShiftAnalysis(rollTableByMonth, baselineMonths, targetMonth){
   const baseTypes=['4 ROLLs','5 ROLLs','6 ROLLs','7 ROLLs'];
   const allTypes=[...baseTypes,'Seasonal 6 ROLLs'];
   const out={};
@@ -1365,30 +1492,30 @@ function buildShareShiftAnalysis(rollTableByMonth){
     const baselineAvg={};
     baseTypes.forEach(t=>{
       let sum=0;
-      BASELINE_MONTHS.forEach(m=>{
+      baselineMonths.forEach(m=>{
         const r=(rollTableByMonth[b][m]||[]).find(x=>x.type===t);
         sum += r?r.qty:0;
       });
-      baselineAvg[t]=sum/BASELINE_MONTHS.length;
+      baselineAvg[t]=baselineMonths.length ? sum/baselineMonths.length : 0;
     });
     const baselineTotal = Object.values(baselineAvg).reduce((a,c)=>a+c,0);
-    const juneRows = rollTableByMonth[b][TARGET]||[];
-    const juneQty={};
-    allTypes.forEach(t=>{ const r=juneRows.find(x=>x.type===t); juneQty[t]=r?r.qty:0; });
-    const juneTotal = allTypes.reduce((s,t)=>s+juneQty[t],0);
+    const targetRows = rollTableByMonth[b][targetMonth]||[];
+    const targetQty={};
+    allTypes.forEach(t=>{ const r=targetRows.find(x=>x.type===t); targetQty[t]=r?r.qty:0; });
+    const targetTotal = allTypes.reduce((s,t)=>s+targetQty[t],0);
     const rows=[]; let netImpact=0;
     allTypes.forEach(t=>{
       const baseShare = baselineTotal? (baselineAvg[t]||0)/baselineTotal : 0;
-      const juneShare = juneTotal? juneQty[t]/juneTotal : 0;
-      const shiftPp=(juneShare-baseShare)*100;
-      const qtyShift=(juneShare-baseShare)*juneTotal;
+      const targetShare = targetTotal? targetQty[t]/targetTotal : 0;
+      const shiftPp=(targetShare-baseShare)*100;
+      const qtyShift=(targetShare-baseShare)*targetTotal;
       const revImpact=qtyShift*ROLL_PRICE[t];
       netImpact+=revImpact;
       rows.push({type:t, price:ROLL_PRICE[t], baseline_avg_qty:Math.round((baselineAvg[t]||0)*10)/10,
-        baseline_share:Math.round(baseShare*1000)/10, june_qty:juneQty[t], june_share:Math.round(juneShare*1000)/10,
+        baseline_share:Math.round(baseShare*1000)/10, june_qty:targetQty[t], june_share:Math.round(targetShare*1000)/10,
         share_shift_pp:Math.round(shiftPp*10)/10, qty_shift:Math.round(qtyShift*10)/10, revenue_impact:Math.round(revImpact)});
     });
-    out[b] = {baseline_total: Math.round(baselineTotal*10)/10, june_total: juneTotal, rows, net_impact: Math.round(netImpact)};
+    out[b] = {baseline_total: Math.round(baselineTotal*10)/10, june_total: targetTotal, rows, net_impact: Math.round(netImpact)};
   });
   return out;
 }
@@ -1407,13 +1534,26 @@ async function loadAllDataAndInit(silent=false){
     } catch(e2) {
       console.error('YieldLoss Data (remaining weight) failed to load, showing empty:', e2);
     }
-    let west_by_month = WEST_STATIC; // fallback to the old static snapshot if the live fetch fails entirely
+    let west_by_month = {CTW:{}, Thonglor:{}}; // empty fallback if the live fetch fails entirely
     try {
       west_by_month = await buildWestByMonthLive();
     } catch(e3) {
-      console.error('West (waste) live fetch failed, falling back to static snapshot:', e3);
+      console.error('West (waste) live fetch failed, tables will be empty:', e3);
     }
     const sales = normalizeSalesRows(salesRaw);
+    // Diagnostic: show what รหัส values are ending up UNCATEGORIZED (not Drinks/A La Carte) per
+    // branch, with counts — both to Console and on-screen (section 03), so it's obvious whether
+    // a branch's code convention needs a new rule.
+    window.__categoryDiag = {CTW:[], Thonglor:[]};
+    ['CTW','Thonglor'].forEach(b=>{
+      const uncategorized = {};
+      sales.filter(r=>r.branch===b && r.category!=='Drinks' && r.category!=='A La Carte').forEach(r=>{
+        uncategorized[r.code||r.category] = (uncategorized[r.code||r.category]||0)+1;
+      });
+      const sorted = Object.entries(uncategorized).sort((a,c)=>c[1]-a[1]).slice(0,20);
+      window.__categoryDiag[b] = sorted;
+      console.log(`[${b}] รหัส/หมวดที่ไม่เข้า Drinks/A La Carte (top 20):`, sorted);
+    });
     const fish = normalizeFishRows(fishRaw);
     const yieldLoss = normalizeYieldLossRows(yieldLossRaw);
     const latestDateInfo = buildLatestDateMap(yieldLoss);
@@ -1426,12 +1566,13 @@ async function loadAllDataAndInit(silent=false){
     const yield_summary_by_month = buildYieldSummaryByMonth(fish, latestDateInfo);
     const {score_trend, cost_gap_trend} = buildScoreCostGapTrend(fish);
     const kpi_by_month = buildKpiByMonth(monthly_sales, yield_summary_by_month);
-    const share_shift_analysis = buildShareShiftAnalysis(roll_table_by_month);
+    // share_shift_analysis is no longer precomputed here — buildSubstitution() computes it fresh
+    // on demand since baseline months and target month are now user-configurable (section 02b).
     const remaining_weight_by_month = buildRemainingWeightByMonth(yieldLoss);
 
     DATA = {
       monthly_sales, set_qty_trend, roll_table_by_month, top_alc_by_month, top_bev_by_month,
-      items, yield_summary_by_month, score_trend, cost_gap_trend, kpi_by_month, share_shift_analysis,
+      items, yield_summary_by_month, score_trend, cost_gap_trend, kpi_by_month,
       west_by_month,
       menu_data_raw: menuRaw,
       remaining_weight_by_month,
@@ -1455,7 +1596,6 @@ async function loadAllDataAndInit(silent=false){
     banner.style.display = 'none';
     buildTrendCharts();
     buildSeasonalTimeline();
-    buildSubstitution();
     renderAll();
   } catch(err) {
     console.error(err);
