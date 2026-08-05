@@ -1129,6 +1129,11 @@ function normalizeYieldLossRows(raw){
     return {item, branch, date, weight};
   }).filter(r=>r.item && r.date && r.weight!==null);
 }
+function sumByItem(matches){
+  const totals = {};
+  matches.forEach(r=>{ totals[r.item] = (totals[r.item]||0) + (r.weight||0); });
+  return Object.entries(totals).map(([item,weight])=>[item,weight]).sort((a,b)=>b[1]-a[1]);
+}
 function buildRemainingWeightByMonth(rows){
   const hasBranch = rows.some(r=>r.branch);
   const out = {CTW:{}, Thonglor:{}};
@@ -1136,10 +1141,10 @@ function buildRemainingWeightByMonth(rows){
     const day = LAST_DAY_OF_MONTH[m] || 30;
     const matches = rows.filter(r=> r.date.mo===m && r.date.d===day);
     if(hasBranch){
-      out.CTW[m] = matches.filter(r=>r.branch==='CTW').map(r=>[r.item, r.weight]).sort((a,b)=>b[1]-a[1]);
-      out.Thonglor[m] = matches.filter(r=>r.branch==='Thonglor').map(r=>[r.item, r.weight]).sort((a,b)=>b[1]-a[1]);
+      out.CTW[m] = sumByItem(matches.filter(r=>r.branch==='CTW'));
+      out.Thonglor[m] = sumByItem(matches.filter(r=>r.branch==='Thonglor'));
     } else {
-      const list = matches.map(r=>[r.item, r.weight]).sort((a,b)=>b[1]-a[1]);
+      const list = sumByItem(matches);
       out.CTW[m] = list;
       out.Thonglor[m] = list;
     }
@@ -1149,6 +1154,8 @@ function buildRemainingWeightByMonth(rows){
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
 // with the real header row appearing a couple of rows down (not row 1), so we parse as a raw grid
 // and locate the header row by searching for "CATEGORY" rather than assuming header:true.
+// Monthly West tabs: just need NAME (C) and WT (F) — the per-tab PRICE/g. column is unreliable,
+// so pricing is looked up separately from the master "PRICE" tab instead (see fetchPriceLookup).
 function parseWestGrid(text){
   const grid = Papa.parse(text, {header:false, skipEmptyLines:true}).data;
   let headerIdx = -1;
@@ -1156,15 +1163,6 @@ function parseWestGrid(text){
     if((grid[i][1]||'').trim().toUpperCase()==='CATEGORY'){ headerIdx = i; break; }
   }
   if(headerIdx===-1) return null; // doesn't look like a West tab — reject this candidate
-  // Find the "PRICE / g." column by header text rather than a hardcoded index — this way it still
-  // works even if that column gets collapsed/hidden in the sheet (collapsed columns are still
-  // present in the CSV export, just visually hidden in the Sheets UI).
-  const headerRow = grid[headerIdx];
-  let priceColIdx = -1;
-  for(let c=0;c<headerRow.length;c++){
-    const hNorm = (headerRow[c]||'').trim().toUpperCase().replace(/\s+/g,'');
-    if(hNorm.startsWith('PRICE/G')){ priceColIdx = c; break; }
-  }
   const items = [];
   for(let i=headerIdx+1;i<grid.length;i++){
     const row = grid[i];
@@ -1172,11 +1170,49 @@ function parseWestGrid(text){
     const name = (row[2]||'').trim();
     const wt = toNum(row[5]) || 0;
     const unit = (row[6]||'').trim();
-    const pricePerG = priceColIdx>=0 ? (toNum(row[priceColIdx])||0) : 0;
     if(!name) continue;
-    items.push([name, category, unit, wt, wt*pricePerG]);
+    items.push([name, category, unit, wt]);
   }
   return items;
+}
+// Master "PRICE" tab (one per branch spreadsheet, sheet name literally "PRICE") — NAME + PRICE/g.,
+// used as a lookup joined by item name against every monthly West tab's WT.
+async function fetchPriceLookup(branch){
+  const sheetId = WEST_SHEET_ID[branch];
+  if(!sheetId) return {};
+  try {
+    const res = await fetch(westCsvUrl(sheetId, 'PRICE'));
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const text = await res.text();
+    const grid = Papa.parse(text, {header:false, skipEmptyLines:true}).data;
+    let headerIdx = -1, nameCol = -1, priceCol = -1;
+    const priceHeaderRegex = /PRICE\s*\/\s*G/i;
+    for(let i=0;i<Math.min(grid.length,10);i++){
+      const row = grid[i];
+      for(let c=0;c<row.length;c++){
+        const cell = (row[c]||'').trim();
+        if(cell.toUpperCase()==='NAME') nameCol = c;
+        if(priceHeaderRegex.test(cell)) priceCol = c;
+      }
+      if(nameCol!==-1 && priceCol!==-1){ headerIdx = i; break; }
+    }
+    if(headerIdx===-1){
+      console.warn(`West ${branch}: หาแท็บ "PRICE" ไม่เจอคอลัมน์ NAME/PRICE-per-g ที่ครบ — มูลค่า West จะเป็น 0 ทั้งหมด`);
+      return {};
+    }
+    const map = {};
+    for(let i=headerIdx+1;i<grid.length;i++){
+      const name = (grid[i][nameCol]||'').trim();
+      const price = toNum(grid[i][priceCol]) || 0;
+      if(!name) continue;
+      map[name] = price;
+      map[name.toLowerCase()] = price;
+    }
+    return map;
+  } catch(e) {
+    console.error(`West ${branch}: โหลดแท็บ "PRICE" ไม่สำเร็จ —`, e.message, '— มูลค่า West จะเป็น 0 ทั้งหมด');
+    return {};
+  }
 }
 // Tries every candidate tab name for this branch/month in parallel; returns the rows from
 // whichever candidate is both fetchable AND actually parses as a West-shaped sheet.
@@ -1202,6 +1238,8 @@ async function fetchWestTabRows(branch, month){
 }
 async function buildWestByMonthLive(){
   const out = {CTW:{}, Thonglor:{}};
+  const priceMaps = {};
+  await Promise.all(['CTW','Thonglor'].map(async b=>{ priceMaps[b] = await fetchPriceLookup(b); }));
   const tasks = [];
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
@@ -1209,7 +1247,13 @@ async function buildWestByMonthLive(){
     }
   });
   const results = await Promise.all(tasks);
-  results.forEach(({b,m,rows})=>{ out[b][m] = rows; });
+  results.forEach(({b,m,rows})=>{
+    const priceMap = priceMaps[b] || {};
+    out[b][m] = rows.map(([name, category, unit, wt])=>{
+      const price = priceMap[name] ?? priceMap[name.toLowerCase()] ?? 0;
+      return [name, category, unit, wt, wt*price];
+    });
+  });
   return out;
 }
 const MONTH_ABBR = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'};
