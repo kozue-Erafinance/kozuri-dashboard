@@ -298,6 +298,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿ <span class="pct-gap-tag" id="pctGapTL"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldTL"></table></div>
         <h3 style="margin-top:20px;">West — Thonglor <span class="pct-gap-tag neg" id="westValueTL" style="margin-left:8px;"></span></h3>
+        <div class="raw-note" id="westDiagTL" style="margin-bottom:6px;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
             <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
@@ -314,6 +315,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿ <span class="pct-gap-tag" id="pctGapCTW"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldCTW"></table></div>
         <h3 style="margin-top:20px;">West — CTW <span class="pct-gap-tag neg" id="westValueCTW" style="margin-left:8px;"></span></h3>
+        <div class="raw-note" id="westDiagCTW" style="margin-bottom:6px;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
           <div>
             <div class="raw-note" style="margin-bottom:5px;">ของเสีย (เฉพาะรายการที่มีค่า &gt; 0)</div>
@@ -839,6 +841,19 @@ function buildYield(m){
   const westCTWTotal = westTable('westCTW', DATA.west_by_month.CTW[m] || []);
   document.getElementById('westValueTL').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westTLTotal);
   document.getElementById('westValueCTW').textContent = 'มูลค่ารวมที่เสียไป ฿' + fmtNum(westCTWTotal);
+  function renderWestDiag(elId, branch){
+    const el = document.getElementById(elId);
+    const d = window.__westDiag && window.__westDiag[branch];
+    if(!d){ el.textContent = ''; return; }
+    if(d.priceCount===0){
+      el.innerHTML = '<span class="chg-down">⚠ หาแท็บ "PRICE" ไม่เจอ/โหลดไม่สำเร็จ — มูลค่าจะเป็น 0 ทั้งหมด (เช็ค Console)</span>';
+    } else {
+      const u = [...d.unmatched];
+      el.textContent = `price lookup: ${d.priceCount} รายการ` + (u.length ? ` · จับคู่ชื่อไม่เจอ ${u.length} รายการ เช่น "${u.slice(0,3).join('", "')}"` : '');
+    }
+  }
+  renderWestDiag('westDiagTL', 'Thonglor');
+  renderWestDiag('westDiagCTW', 'CTW');
   const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
   document.getElementById('pdtLabelTL').textContent = dateLabel;
   document.getElementById('pdtLabelCTW').textContent = dateLabel;
@@ -1180,39 +1195,40 @@ function parseWestGrid(text){
 async function fetchPriceLookup(branch){
   const sheetId = WEST_SHEET_ID[branch];
   if(!sheetId) return {};
-  try {
-    const res = await fetch(westCsvUrl(sheetId, 'PRICE'));
-    if(!res.ok) throw new Error('HTTP '+res.status);
-    const text = await res.text();
-    const grid = Papa.parse(text, {header:false, skipEmptyLines:true}).data;
-    let headerIdx = -1, nameCol = -1, priceCol = -1;
-    const priceHeaderRegex = /PRICE\s*\/\s*G/i;
-    for(let i=0;i<Math.min(grid.length,10);i++){
-      const row = grid[i];
-      for(let c=0;c<row.length;c++){
-        const cell = (row[c]||'').trim();
-        if(cell.toUpperCase()==='NAME') nameCol = c;
-        if(priceHeaderRegex.test(cell)) priceCol = c;
+  const tabNameCandidates = ['PRICE','Price','price'];
+  for(const tabName of tabNameCandidates){
+    try {
+      const res = await fetch(westCsvUrl(sheetId, tabName));
+      if(!res.ok) continue;
+      const text = await res.text();
+      const grid = Papa.parse(text, {header:false, skipEmptyLines:true}).data;
+      let headerIdx = -1, nameCol = -1, priceCol = -1;
+      const priceHeaderRegex = /PRICE\s*\/\s*G/i;
+      for(let i=0;i<Math.min(grid.length,10);i++){
+        const row = grid[i];
+        for(let c=0;c<row.length;c++){
+          const cell = (row[c]||'').trim();
+          if(cell.toUpperCase()==='NAME') nameCol = c;
+          if(priceHeaderRegex.test(cell)) priceCol = c;
+        }
+        if(nameCol!==-1 && priceCol!==-1){ headerIdx = i; break; }
       }
-      if(nameCol!==-1 && priceCol!==-1){ headerIdx = i; break; }
+      if(headerIdx===-1) continue; // this candidate tab name loaded but didn't look like the PRICE sheet — try next
+      const map = {};
+      for(let i=headerIdx+1;i<grid.length;i++){
+        const name = (grid[i][nameCol]||'').trim();
+        const price = toNum(grid[i][priceCol]) || 0;
+        if(!name) continue;
+        map[name] = price;
+        map[name.toLowerCase()] = price;
+      }
+      return map;
+    } catch(e) {
+      continue;
     }
-    if(headerIdx===-1){
-      console.warn(`West ${branch}: หาแท็บ "PRICE" ไม่เจอคอลัมน์ NAME/PRICE-per-g ที่ครบ — มูลค่า West จะเป็น 0 ทั้งหมด`);
-      return {};
-    }
-    const map = {};
-    for(let i=headerIdx+1;i<grid.length;i++){
-      const name = (grid[i][nameCol]||'').trim();
-      const price = toNum(grid[i][priceCol]) || 0;
-      if(!name) continue;
-      map[name] = price;
-      map[name.toLowerCase()] = price;
-    }
-    return map;
-  } catch(e) {
-    console.error(`West ${branch}: โหลดแท็บ "PRICE" ไม่สำเร็จ —`, e.message, '— มูลค่า West จะเป็น 0 ทั้งหมด');
-    return {};
   }
+  console.error(`West ${branch}: หาแท็บ "PRICE" ไม่เจอเลย (ลองชื่อ ${tabNameCandidates.join(', ')}) — มูลค่า West จะเป็น 0 ทั้งหมด`);
+  return {};
 }
 // Tries every candidate tab name for this branch/month in parallel; returns the rows from
 // whichever candidate is both fetchable AND actually parses as a West-shaped sheet.
@@ -1239,7 +1255,11 @@ async function fetchWestTabRows(branch, month){
 async function buildWestByMonthLive(){
   const out = {CTW:{}, Thonglor:{}};
   const priceMaps = {};
-  await Promise.all(['CTW','Thonglor'].map(async b=>{ priceMaps[b] = await fetchPriceLookup(b); }));
+  const diag = {CTW:{priceCount:0, unmatched:new Set()}, Thonglor:{priceCount:0, unmatched:new Set()}};
+  await Promise.all(['CTW','Thonglor'].map(async b=>{
+    priceMaps[b] = await fetchPriceLookup(b);
+    diag[b].priceCount = Object.keys(priceMaps[b]).length;
+  }));
   const tasks = [];
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
@@ -1251,9 +1271,15 @@ async function buildWestByMonthLive(){
     const priceMap = priceMaps[b] || {};
     out[b][m] = rows.map(([name, category, unit, wt])=>{
       const price = priceMap[name] ?? priceMap[name.toLowerCase()] ?? 0;
+      if(price===0 && wt>0) diag[b].unmatched.add(name);
       return [name, category, unit, wt, wt*price];
     });
   });
+  ['CTW','Thonglor'].forEach(b=>{
+    const u = [...diag[b].unmatched];
+    console.log(`West ${b}: price lookup มี ${diag[b].priceCount} รายการ | รายการที่มี waste แต่หาราคาไม่เจอ: ${u.length} รายการ`, u.slice(0,15));
+  });
+  window.__westDiag = diag; // for on-screen display
   return out;
 }
 const MONTH_ABBR = {1:'Jan',2:'Feb',3:'Mar',4:'Apr',5:'May',6:'Jun',7:'Jul',8:'Aug',9:'Sep',10:'Oct',11:'Nov',12:'Dec'};
