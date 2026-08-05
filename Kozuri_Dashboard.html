@@ -239,11 +239,6 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 
     <div class="section-title"><span class="num">02b</span><h2>Seasonal 6 ROLLs ที่เพิ่มขึ้น — แทนที่ SET ไหน &amp; ผลต่อรายได้</h2><span class="rule"></span></div>
     <div class="card" style="margin-bottom:18px; padding:14px 20px; font-size:12.5px; color:var(--ink-soft);">
-      <div style="margin-bottom:10px;">
-        <b style="color:var(--navy-900);">เทียบฐานกับเดือน:</b>
-        <span id="baselineMonthChecks" style="display:inline-flex; gap:10px; flex-wrap:wrap; margin-left:8px; vertical-align:middle;"></span>
-        <span style="margin-left:6px; color:var(--ink-soft);">(เลือกได้หลายเดือน จะเฉลี่ยให้อัตโนมัติ — เทียบกับเดือนที่เลือกไว้ด้านบนของหน้าเสมอ)</span>
-      </div>
       <div id="shareShiftDesc"></div>
     </div>
     <div class="grid-2b">
@@ -489,7 +484,6 @@ function populateMonthDropdown(latestMonth){
   monthSel.innerHTML = MONTHS.map(m=>`<option value="${m}" ${m===latestMonth?'selected':''}>${MON_LABELS[m]} 2026${m===latestMonth?' (ล่าสุด)':''}</option>`).join('');
 }
 populateMonthDropdown(6); // placeholder until real data loads and we detect the actual latest month
-initBaselineChecks();
 monthSel.addEventListener('change', ()=>{ currentMonth = parseInt(monthSel.value); renderAll(); });
 
 // ---------- KPI ----------
@@ -519,14 +513,20 @@ function buildKPI(m){
 }
 
 // ---------- Monthly sales / SET qty trend (full history, month-independent) ----------
+function monthsWithData(dataObj){
+  return MONTHS.filter(m => dataObj.CTW[m]!==undefined || dataObj.Thonglor[m]!==undefined);
+}
 function buildTrendCharts(){
-  const months = MONTHS;
+  const salesMonths = monthsWithData(DATA.monthly_sales);
+  const setQtyMonths = monthsWithData(DATA.monthly_sales); // set_qty_trend itself is always fully populated (0s included), so use sales as the "has activity" signal
+  const scoreMonths = monthsWithData(DATA.score_trend);
+  const gapMonths = monthsWithData(DATA.cost_gap_trend);
   if(monthlySalesChart) monthlySalesChart.destroy();
   monthlySalesChart = new Chart(document.getElementById('chartMonthlySales'), {
     type:'line',
-    data:{labels: months.map(m=>MON_LABELS[m]), datasets:[
-      {label:'CTW', data:months.map(m=>DATA.monthly_sales.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
-      {label:'Thonglor', data:months.map(m=>DATA.monthly_sales.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
+    data:{labels: salesMonths.map(m=>MON_LABELS[m]), datasets:[
+      {label:'CTW', data:salesMonths.map(m=>DATA.monthly_sales.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
+      {label:'Thonglor', data:salesMonths.map(m=>DATA.monthly_sales.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
     ]},
     options:{maintainAspectRatio:false, layout:{padding:{top:34}},
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+fmtNum(c.parsed.y)}},
@@ -548,9 +548,9 @@ function buildTrendCharts(){
   if(setQtyChart) setQtyChart.destroy();
   setQtyChart = new Chart(document.getElementById('chartSetQty'), {
     type:'line',
-    data:{labels: months.map(m=>MON_LABELS[m]), datasets:[
-      {label:'CTW', data:months.map(m=>DATA.set_qty_trend.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
-      {label:'Thonglor', data:months.map(m=>DATA.set_qty_trend.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
+    data:{labels: setQtyMonths.map(m=>MON_LABELS[m]), datasets:[
+      {label:'CTW', data:setQtyMonths.map(m=>DATA.set_qty_trend.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
+      {label:'Thonglor', data:setQtyMonths.map(m=>DATA.set_qty_trend.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.35, pointRadius:4, borderWidth:2.5},
     ]},
     options:{maintainAspectRatio:false, layout:{padding:{top:34}},
       plugins:{legend:{display:false},
@@ -572,9 +572,9 @@ function buildTrendCharts(){
   if(scoreChart) scoreChart.destroy();
   scoreChart = new Chart(document.getElementById('chartScoreTrend'), {
     type:'line',
-    data:{labels:months.map(m=>MON_LABELS[m]), datasets:[
-      {label:'CTW', data:months.map(m=>DATA.score_trend.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.3, pointRadius:4, borderWidth:2.5},
-      {label:'Thonglor', data:months.map(m=>DATA.score_trend.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.3, pointRadius:4, borderWidth:2.5},
+    data:{labels:scoreMonths.map(m=>MON_LABELS[m]), datasets:[
+      {label:'CTW', data:scoreMonths.map(m=>DATA.score_trend.CTW[m]??null), borderColor:CTW_COLOR, backgroundColor:CTW_COLOR, tension:.3, pointRadius:4, borderWidth:2.5},
+      {label:'Thonglor', data:scoreMonths.map(m=>DATA.score_trend.Thonglor[m]??null), borderColor:TL_COLOR, backgroundColor:TL_COLOR, tension:.3, pointRadius:4, borderWidth:2.5},
     ]},
     options:{maintainAspectRatio:false, layout:{padding:{top:24}},
       plugins:{legend:{display:false},
@@ -585,9 +585,9 @@ function buildTrendCharts(){
   if(gapChart) gapChart.destroy();
   gapChart = new Chart(document.getElementById('chartGapTrend'), {
     type:'bar',
-    data:{labels:months.map(m=>MON_LABELS[m]), datasets:[
-      {label:'CTW', data:months.map(m=>DATA.cost_gap_trend.CTW[m]??null), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:22},
-      {label:'Thonglor', data:months.map(m=>DATA.cost_gap_trend.Thonglor[m]??null), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:22},
+    data:{labels:gapMonths.map(m=>MON_LABELS[m]), datasets:[
+      {label:'CTW', data:gapMonths.map(m=>DATA.cost_gap_trend.CTW[m]??null), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:22},
+      {label:'Thonglor', data:gapMonths.map(m=>DATA.cost_gap_trend.Thonglor[m]??null), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:22},
     ]},
     options:{maintainAspectRatio:false, layout:{padding:{bottom:10, top:6}},
       plugins:{legend:{display:false}, tooltip:{callbacks:{label:c=>c.dataset.label+': ฿'+fmtNum(c.parsed.y)}},
@@ -693,7 +693,7 @@ function buildSeasonalTimeline(){
   buildOne('chartSeasonalCTW', 'CTW', 'seasonalCTWChart');
 
   function buildOne(canvasId, branch, varName){
-    const monthsToShow = [1,2,3,4,5,6];
+    const monthsToShow = monthsWithData(DATA.monthly_sales);
     const labels = monthsToShow.map(m=> m===5 ? MON_LABELS[m]+' *' : MON_LABELS[m]);
     // compute % share per roll type per month
     const shareByType = {};
@@ -733,38 +733,17 @@ function buildSeasonalTimeline(){
 }
 
 // ---------- Share Shift Analysis: baseline (Feb-Apr avg) -> June ----------
-let shareShiftBaselineMonths = [];
-function initBaselineChecks(){
-  const wrap = document.getElementById('baselineMonthChecks');
-  wrap.innerHTML = MONTHS.map(m=>`
-    <label style="display:inline-flex; align-items:center; gap:3px; font-weight:400; cursor:pointer;">
-      <input type="checkbox" class="baselineMonthChk" value="${m}"> ${MON_LABELS[m]}
-    </label>`).join('');
-  wrap.querySelectorAll('.baselineMonthChk').forEach(chk=>{
-    chk.addEventListener('change', ()=>{
-      shareShiftBaselineMonths = [...wrap.querySelectorAll('.baselineMonthChk:checked')].map(c=>parseInt(c.value));
-      if(DATA) buildSubstitution();
-    });
-  });
-}
+const SHARE_SHIFT_BASELINE_MONTHS = [1,2,3,4]; // fixed baseline: ม.ค.–เม.ย. (target month always = whatever's selected up top)
 function buildSubstitution(){
-  // Default baseline (only applied once, before the user has picked anything): the month right
-  // before whatever's currently selected — a natural "vs last month" starting point.
-  if(!shareShiftBaselineMonths.length){
-    const def = Math.max(1, currentMonth-1);
-    shareShiftBaselineMonths = [def];
-    const wrap = document.getElementById('baselineMonthChecks');
-    const chk = wrap.querySelector(`.baselineMonthChk[value="${def}"]`);
-    if(chk) chk.checked = true;
-  }
-  const analysis = buildShareShiftAnalysis(DATA.roll_table_by_month, shareShiftBaselineMonths, currentMonth);
-  const baselineLabel = shareShiftBaselineMonths.map(m=>MON_LABELS[m]).join('+');
+  const baseline = SHARE_SHIFT_BASELINE_MONTHS;
+  const analysis = buildShareShiftAnalysis(DATA.roll_table_by_month, baseline, currentMonth);
+  const baselineLabel = baseline.map(m=>MON_LABELS[m]).join('–');
   const targetLabel = MON_LABELS[currentMonth];
   document.getElementById('shareShiftTitleTL').textContent = `: ฐาน (${baselineLabel}) → ${targetLabel}`;
   document.getElementById('shareShiftTitleCTW').textContent = `: ฐาน (${baselineLabel}) → ${targetLabel}`;
   document.getElementById('shareShiftDesc').innerHTML =
     `<b style="color:var(--navy-900);">วิธีวิเคราะห์ (Share Shift Analysis):</b> เทียบ <b>สัดส่วน (%share)</b> ของ SET แต่ละแบบในยอดขาย ROLLS ทั้งหมด ระหว่าง `
-    + `<b style="color:var(--navy-900);">ฐาน (${shareShiftBaselineMonths.length>1?'เฉลี่ย ':''}${baselineLabel})</b> กับ <b style="color:var(--navy-900);">${targetLabel}</b><br>`
+    + `<b style="color:var(--navy-900);">ฐาน (เฉลี่ย ${baselineLabel})</b> กับ <b style="color:var(--navy-900);">${targetLabel}</b><br>`
     + `ส่วนต่าง %share ถูกแปลงกลับเป็น "จำนวน Set ที่ย้าย" (โดยคูณกับยอดรวม ROLLS ของเดือน ${targetLabel}) แล้วคูณราคาต่อ Set เพื่อดูผลกระทบต่อรายได้ — ราคาที่ใช้: Seasonal Set ฿1,190 · 4 ROLLs ฿590 · 5 ROLLs ฿790 · 6 ROLLs ฿990 · 7 ROLLs ฿1,290`;
   buildShareShiftForBranch('subTL', 'Thonglor', 'tl', analysis, targetLabel);
   buildShareShiftForBranch('subCTW', 'CTW', 'ctw', analysis, targetLabel);
@@ -816,13 +795,20 @@ function buildTopItems(m){
   const diagEl = document.getElementById('categoryDiagNote');
   const diag = window.__categoryDiag || {CTW:[], Thonglor:[]};
   const fmtPairs = arr => arr.slice(0,8).map(([code,count])=>`"${code}"×${count}`).join(', ');
+  let html = '';
   if((diag.CTW||[]).length || (diag.Thonglor||[]).length){
-    diagEl.innerHTML = 'รหัส/หมวดที่ไม่เข้า Drinks หรือ A La Carte (คงค่าเดิมไว้ ไม่ได้แปลว่าผิด แค่ไม่ถูกจัดกลุ่ม — ตัวเลขหลัง × คือจำนวนแถวทั้งหมดในเดือนที่เลือกไว้ตอนโหลดหน้า):'
+    html += 'รหัส/หมวดที่ไม่เข้า Drinks หรือ A La Carte (คงค่าเดิมไว้ ไม่ได้แปลว่าผิด แค่ไม่ถูกจัดกลุ่ม — ตัวเลขหลัง × คือจำนวนแถวทั้งหมดในเดือนที่เลือกไว้ตอนโหลดหน้า):'
       + ((diag.CTW||[]).length ? ` CTW: ${fmtPairs(diag.CTW)}` : '')
       + ((diag.Thonglor||[]).length ? ` · Thonglor: ${fmtPairs(diag.Thonglor)}` : '');
-  } else {
-    diagEl.textContent = '';
   }
+  const dup = window.__nameDupDiag || {CTW:[], Thonglor:[]};
+  const fmtDup = arr => arr.slice(0,6).map(([a,c])=>`"${a}" ≈ "${c}"`).join(', ');
+  if((dup.CTW||[]).length || (dup.Thonglor||[]).length){
+    html += (html?'<br>':'') + '⚠ ชื่อสินค้า A La Carte ที่อาจเป็นตัวเดียวกันแต่พิมพ์ไม่เหมือนกัน (ยังไม่รวมให้อัตโนมัติ เพราะไม่แน่ใจว่าใช่ตัวเดียวกันจริงไหม — เช็คแล้วบอกได้ถ้าอยากให้รวม):'
+      + ((dup.CTW||[]).length ? ` CTW: ${fmtDup(dup.CTW)}` : '')
+      + ((dup.Thonglor||[]).length ? ` · Thonglor: ${fmtDup(dup.Thonglor)}` : '');
+  }
+  diagEl.innerHTML = html;
 }
 function filterAlcType(rows){
   if(alcTypeFilter==='all') return rows;
@@ -1214,7 +1200,14 @@ function buildTopByMonth(sales, filterFn){
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
       const rows = sales.filter(r=>r.branch===b && r.month===m && filterFn(r));
-      out[b][m] = [...rows].sort((a,c)=>c.qty-a.qty).map(r=>[r.item, r.qty]);
+      const totals = {};
+      rows.forEach(r=>{
+        const key = normalizeItemName(r.item);
+        if(!totals[key]) totals[key] = {item:r.item, qty:0};
+        else if(r.item.trim().length > totals[key].item.trim().length) totals[key].item = r.item.trim(); // keep the fuller name (e.g. "...Hand Roll") for display
+        totals[key].qty += r.qty;
+      });
+      out[b][m] = Object.values(totals).sort((a,c)=>c.qty-a.qty).map(t=>[t.item, t.qty]);
     }
   });
   return out;
@@ -1224,7 +1217,17 @@ function buildTopAlaCarteByMonth(sales){
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
       const rows = sales.filter(r=>r.branch===b && r.month===m && isAlaCarte(r));
-      out[b][m] = [...rows].sort((a,c)=>c.qty-a.qty).map(r=>[r.item, r.qty, isPremiumRoll(r)?'premium':'roll']);
+      const totals = {};
+      rows.forEach(r=>{
+        const key = normalizeItemName(r.item);
+        if(!totals[key]) totals[key] = {item:r.item, qty:0, premium:isPremiumRoll(r)};
+        else {
+          if(r.item.trim().length > totals[key].item.trim().length) totals[key].item = r.item.trim();
+          totals[key].premium = totals[key].premium || isPremiumRoll(r);
+        }
+        totals[key].qty += r.qty;
+      });
+      out[b][m] = Object.values(totals).sort((a,c)=>c.qty-a.qty).map(t=>[t.item, t.qty, t.premium?'premium':'roll']);
     }
   });
   return out;
@@ -1326,6 +1329,12 @@ function parseWestGrid(text){
 // don't cause a false "not found".
 function normalizeName(s){
   return (s||'').replace(/\u00A0/g,' ').replace(/\s+/g,' ').trim().toLowerCase();
+}
+// Same as normalizeName, but also strips a trailing "Hand Roll" — e.g. "Snow Crab" and
+// "Snow Crab Hand Roll" are the same menu item just typed with/without the suffix, so they
+// should be summed together in the Top A La Carte / Beverage rankings (confirmed by the user).
+function normalizeItemName(s){
+  return normalizeName(s).replace(/\s*hand\s*roll$/,'').trim();
 }
 // The PRICE lookup tab only exists in the CTW spreadsheet — both branches share this ONE price list.
 async function fetchPriceLookup(){
@@ -1553,6 +1562,24 @@ async function loadAllDataAndInit(silent=false){
       const sorted = Object.entries(uncategorized).sort((a,c)=>c[1]-a[1]).slice(0,20);
       window.__categoryDiag[b] = sorted;
       console.log(`[${b}] รหัส/หมวดที่ไม่เข้า Drinks/A La Carte (top 20):`, sorted);
+    });
+    // Diagnostic: flag A La Carte item names that LOOK like they might be the same product typed
+    // differently (e.g. "Toro" vs "Toro Aburi") but AREN'T already handled by normalizeItemName
+    // (the "X" == "X Hand Roll" merge rule) — shown but NOT auto-merged, since we can't be sure
+    // these other cases are really the same menu item without asking.
+    window.__nameDupDiag = {CTW:[], Thonglor:[]};
+    ['CTW','Thonglor'].forEach(b=>{
+      const names = [...new Set(sales.filter(r=>r.branch===b && isAlaCarte(r)).map(r=>r.item.trim()))];
+      const pairs = [];
+      for(let i=0;i<names.length;i++){
+        for(let j=i+1;j<names.length;j++){
+          if(normalizeItemName(names[i])===normalizeItemName(names[j])) continue; // already merged automatically
+          const a = names[i].toLowerCase(), c = names[j].toLowerCase();
+          if(a!==c && (a.startsWith(c) || c.startsWith(a))) pairs.push([names[i], names[j]]);
+        }
+      }
+      window.__nameDupDiag[b] = pairs;
+      if(pairs.length) console.log(`[${b}] ชื่อสินค้า A La Carte ที่อาจเป็นตัวเดียวกัน (ยังไม่ได้รวมให้อัตโนมัติ):`, pairs);
     });
     const fish = normalizeFishRows(fishRaw);
     const yieldLoss = normalizeYieldLossRows(yieldLossRaw);
