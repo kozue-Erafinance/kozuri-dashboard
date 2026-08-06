@@ -300,7 +300,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         </span>
       </h3>
       <div class="raw-note" style="margin-bottom:8px;">
-        %Yield = Avg Yield% (คอลัมน์ I ของชีท ซื้อปลา) ของเดือนที่เลือกไว้ด้านบน &nbsp;|&nbsp; %Yield Target = เปอร์เซ็นไทล์ 70 ของ Avg Yield% ทุกเดือนที่มีข้อมูล (ต่อรายการ รวมทั้งสองสาขา)
+        %Yield = ค่ามัธยฐาน (Median) ของ "%Yield" (คอลัมน์ Q ชีท YieldLoss Data) ในเดือนที่เลือกไว้ด้านบน (ไม่รวมวันที่ %Yield = 0 หรือ = 1) &nbsp;|&nbsp; %Yield Target = เปอร์เซ็นไทล์ 70 ของ %Yield ทุกเดือนที่มีข้อมูล (ต่อรายการ รวมทั้งสองสาขา)
       </div>
       <div class="chart-box" style="height:340px;"><canvas id="chartYieldLoss"></canvas></div>
     </div>
@@ -1446,8 +1446,11 @@ function normalizeYieldLossRows(raw){
     const branch = (r['Branch']||'').trim();
     const date = parseFlexibleDate(r['DATE']||r['Date']);
     const weight = toNum(r['Yield']);
-    return {item, branch, date, weight};
-  }).filter(r=>r.item && r.date && r.weight!==null);
+    // "%Yield" (column Q) is stored as a raw fraction in the sheet (e.g. 0.85 for 85%, not "85%"
+    // text) — confirmed by the exclusion rule referring to "%Yield = 1" rather than "= 100".
+    const pctYieldRaw = toNum(r['%Yield']);
+    return {item, branch, date, weight, pctYieldRaw};
+  }).filter(r=>r.item && r.date && (r.weight!==null || r.pctYieldRaw!==null));
 }
 function sumByItem(matches){
   const totals = {};
@@ -1471,12 +1474,20 @@ function buildRemainingWeightByMonth(rows){
   }
   return out;
 }
-// Yield Loss detail table: EVERY entry within the selected month (not just the last-day snapshot
-// used for "remaining weight"), so the raw YieldLoss Data sheet is fully browsable per month.
-// %Yield vs Target chart: uses "Avg Yield%" (column I) directly from the ซื้อปลา (fish) sheet —
-// %Yield = that item/branch's Avg Yield% value for the selected month (used as-is, already a %).
-// %Yield Target = the 70th percentile of that item's Avg Yield% values across ALL months on record
-// (both branches combined) — a stable historical benchmark, not tied to the selected month.
+// %Yield vs Target chart: uses "%Yield" (column Q) from the YieldLoss Data sheet — a per-day,
+// per-item reading stored as a raw fraction (0.85 = 85%), so we ×100 for display. Readings of
+// exactly 0 or 1 (100%) are excluded per instruction — these look like placeholder/default values
+// rather than real observations, not genuine perfect/zero yield days.
+// %Yield (actual, per month) = median of that item/branch's valid daily %Yield readings within the
+// selected month (median, not mean, since daily % readings can have outliers/data-entry spikes).
+// %Yield Target = the 70th percentile of ALL of that item's valid %Yield readings on record, pooled
+// across every month and both branches — a stable historical benchmark, not tied to the selected month.
+function median(arr){
+  if(!arr.length) return null;
+  const s = [...arr].sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
 function percentile(arr, p){
   if(!arr.length) return null;
   const s = [...arr].sort((a,b)=>a-b);
@@ -1485,26 +1496,35 @@ function percentile(arr, p){
   if(lo===hi) return s[lo];
   return s[lo] + (s[hi]-s[lo])*(idx-lo);
 }
-function buildAvgYieldByMonth(fish){
+function validPctYield(rows){
+  // raw fraction scale: exclude exactly 0 or 1, keep everything else, then convert to %.
+  return rows.filter(r=>r.pctYieldRaw!==null && r.pctYieldRaw!==0 && r.pctYieldRaw!==1).map(r=>r.pctYieldRaw*100);
+}
+function buildAvgYieldByMonth(yieldLoss){
   const out = {CTW:{}, Thonglor:{}};
   ['CTW','Thonglor'].forEach(b=>{
     for(let m=1;m<=12;m++){
       const map = {};
-      fish.filter(r=>r.branch===b && r.month===m).forEach(r=>{
-        if(r.avg_yield_pct!==null) map[r.item] = r.avg_yield_pct;
+      const rowsThisMonth = yieldLoss.filter(r=>r.branch===b && r.date.mo===m);
+      const byItem = {};
+      rowsThisMonth.forEach(r=>{ (byItem[r.item] = byItem[r.item] || []).push(r); });
+      Object.keys(byItem).forEach(item=>{
+        const vals = validPctYield(byItem[item]);
+        if(vals.length) map[item] = median(vals);
       });
       out[b][m] = map;
     }
   });
   return out;
 }
-function buildYieldTargets(fish){
+function buildYieldTargets(yieldLoss){
   const byItem = {};
-  fish.forEach(r=>{
-    if(r.avg_yield_pct!==null) (byItem[r.item] = byItem[r.item] || []).push(r.avg_yield_pct);
-  });
+  yieldLoss.forEach(r=>{ (byItem[r.item] = byItem[r.item] || []).push(r); });
   const targets = {};
-  Object.keys(byItem).forEach(item=>{ targets[item] = percentile(byItem[item], 70); });
+  Object.keys(byItem).forEach(item=>{
+    const vals = validPctYield(byItem[item]);
+    if(vals.length) targets[item] = percentile(vals, 70);
+  });
   return targets;
 }
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
@@ -1826,8 +1846,8 @@ async function loadAllDataAndInit(silent=false){
     // share_shift_analysis is no longer precomputed here — buildSubstitution() computes it fresh
     // on demand since baseline months and target month are now user-configurable (section 02b).
     const remaining_weight_by_month = buildRemainingWeightByMonth(yieldLoss);
-    const avg_yield_by_month = buildAvgYieldByMonth(fish);
-    const yield_targets = buildYieldTargets(fish);
+    const avg_yield_by_month = buildAvgYieldByMonth(yieldLoss);
+    const yield_targets = buildYieldTargets(yieldLoss);
 
     DATA = {
       monthly_sales, set_qty_trend, roll_table_by_month, top_alc_by_month, top_bev_by_month,
