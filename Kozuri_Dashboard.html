@@ -302,7 +302,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
       <div class="raw-note" style="margin-bottom:8px;">
         %Yield = ค่ามัธยฐาน (Median) ของ "%Yield" (คอลัมน์ Q ชีท YieldLoss Data) ในเดือนที่เลือกไว้ด้านบน (ไม่รวมวันที่ %Yield = 0 หรือ = 1) &nbsp;|&nbsp; %Yield Target = เปอร์เซ็นไทล์ 70 ของ %Yield ทุกเดือนที่มีข้อมูล (ต่อรายการ รวมทั้งสองสาขา)
       </div>
-      <div class="chart-box" style="height:340px;"><canvas id="chartYieldLoss"></canvas></div>
+      <div class="chart-box" style="height:340px;"><canvas id="chartYieldLoss"></canvas><div id="yieldLossEmptyMsg" style="display:none; padding:20px; font-size:12.5px; color:var(--ink-soft); line-height:1.7;"></div></div>
     </div>
 
     <div class="section-title"><span class="num">05</span><h2>Fish Yield &amp; Cost Gap — <span id="yieldMonthLabel"></span></h2><span class="rule"></span></div>
@@ -959,7 +959,27 @@ function renderYieldLossChart(){
   }));
   stats.sort((a,b)=> (b.target||0) - (a.target||0));
   if(chartYieldLoss) chartYieldLoss.destroy();
-  if(!stats.length) return;
+  const emptyEl = document.getElementById('yieldLossEmptyMsg');
+  const canvasEl = document.getElementById('chartYieldLoss');
+  if(!stats.length){
+    canvasEl.style.display = 'none';
+    emptyEl.style.display = 'block';
+    const d = window.__yieldLossDiag || {};
+    if(d.fetchFailed){
+      emptyEl.innerHTML = `<span class="chg-down">⚠ โหลดชีท "YieldLoss Data" ไม่สำเร็จ</span> — ${d.error||''} (เช็คว่าแชร์เป็น "ทุกคนที่มีลิงก์ดูได้" หรือยัง)`;
+    } else if((d.totalRowsParsed||0)===0){
+      emptyEl.innerHTML = `⚠ ดึงข้อมูลจากชีทได้ <b>${d.rowCount||0} แถว</b> แต่หลัง parse (ต้องมี Main Item + DATE ที่อ่านได้) เหลือ <b>0 แถว</b> — เช็คว่าคอลัมน์ชื่อ "Main Item" และ "DATE" ตรงกับที่ระบบมองหาไหม<br>หัวคอลัมน์ที่เจอในชีท: ${(d.headers||[]).map(h=>`"${h}"`).join(', ') || '(ไม่มี)'}`;
+    } else if((d.withPctYield||0)===0){
+      emptyEl.innerHTML = `⚠ Parse ได้ <b>${d.totalRowsParsed}</b> แถว แต่ไม่มีแถวไหนอ่านค่า "%Yield" ได้เลย — เช็คว่าหัวคอลัมน์ในชีทชื่อ "%Yield" ตรงเป๊ะไหม (คอลัมน์ Q)<br>หัวคอลัมน์ที่เจอในชีท: ${(d.headers||[]).map(h=>`"${h}"`).join(', ') || '(ไม่มี)'}`;
+    } else if((d.withValidPctYield||0)===0){
+      emptyEl.innerHTML = `⚠ เจอค่า %Yield ${d.withPctYield} แถว แต่ทุกแถวมีค่า = 0 หรือ = 1 หมดเลย (ถูกกรองออกตามเงื่อนไข) ไม่เหลือข้อมูลให้แสดง`;
+    } else {
+      emptyEl.innerHTML = `ไม่มีข้อมูล %Yield สำหรับเดือน ${MON_LABELS[m]} ${yieldLossItemFilter!=='all' ? '(รายการ "'+yieldLossItemFilter+'")' : ''} — ลองเดือนอื่นหรือเลือก "ทุกรายการ"`;
+    }
+    return;
+  }
+  canvasEl.style.display = 'block';
+  emptyEl.style.display = 'none';
   chartYieldLoss = new Chart(document.getElementById('chartYieldLoss'), {
     data:{
       labels: stats.map(s=>s.item),
@@ -1445,10 +1465,14 @@ function normalizeYieldLossRows(raw){
     const item = (r['Main Item']||r['Item']||'').trim();
     const branch = (r['Branch']||'').trim();
     const date = parseFlexibleDate(r['DATE']||r['Date']);
-    const weight = toNum(r['Yield']);
-    // "%Yield" (column Q) is stored as a raw fraction in the sheet (e.g. 0.85 for 85%, not "85%"
-    // text) — confirmed by the exclusion rule referring to "%Yield = 1" rather than "= 100".
-    const pctYieldRaw = toNum(r['%Yield']);
+    const weight = toNum(r['Yield']); // column O
+    // The real header is "Yield %" (space, column Q) — NOT "%Yield". Confirmed against the live
+    // sheet: A=Main Item, B=Year, C=Month, D=Branch, E=DATE, F=ITEM, G=Weight, ..., O=Yield,
+    // Q=Yield %, R=Loss %, S=%Yield Target (a pre-computed target column also exists, but per
+    // instruction we compute our own P70 target rather than trusting that column).
+    // Stored as a raw fraction (0.85 for 85%, not "85%" text) — confirmed by the exclusion rule
+    // referring to "%Yield = 1" rather than "= 100".
+    const pctYieldRaw = toNum(r['Yield %']);
     return {item, branch, date, weight, pctYieldRaw};
   }).filter(r=>r.item && r.date && (r.weight!==null || r.pctYieldRaw!==null));
 }
@@ -1497,8 +1521,12 @@ function percentile(arr, p){
   return s[lo] + (s[hi]-s[lo])*(idx-lo);
 }
 function validPctYield(rows){
-  // raw fraction scale: exclude exactly 0 or 1, keep everything else, then convert to %.
-  return rows.filter(r=>r.pctYieldRaw!==null && r.pctYieldRaw!==0 && r.pctYieldRaw!==1).map(r=>r.pctYieldRaw*100);
+  // Exclude per the exact spec: "Yield" (raw weight, column O) = 0, OR "Yield %" (column Q) = 1
+  // (100%) — these look like placeholder/non-observations rather than real readings. Convert the
+  // survivors from raw fraction to a percentage (×100) for display.
+  return rows
+    .filter(r=> r.pctYieldRaw!==null && r.weight!==0 && r.pctYieldRaw!==1)
+    .map(r=>r.pctYieldRaw*100);
 }
 function buildAvgYieldByMonth(yieldLoss){
   const out = {CTW:{}, Thonglor:{}};
@@ -1525,6 +1553,14 @@ function buildYieldTargets(yieldLoss){
     const vals = validPctYield(byItem[item]);
     if(vals.length) targets[item] = percentile(vals, 70);
   });
+  // Diagnostic: how many of the fetched rows actually had a parseable %Yield value
+  const withRawWeight = yieldLoss.filter(r=>r.weight!==null).length;
+  const withPctYield = yieldLoss.filter(r=>r.pctYieldRaw!==null).length;
+  const withValidPctYield = yieldLoss.filter(r=>r.pctYieldRaw!==null && r.pctYieldRaw!==0 && r.pctYieldRaw!==1).length;
+  window.__yieldLossDiag = Object.assign({}, window.__yieldLossDiag, {
+    totalRowsParsed: yieldLoss.length, withRawWeight, withPctYield, withValidPctYield, itemsWithTarget: Object.keys(targets).length,
+  });
+  console.log('%Yield diag:', window.__yieldLossDiag);
   return targets;
 }
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
@@ -1790,8 +1826,12 @@ async function loadAllDataAndInit(silent=false){
     let yieldLossRaw = [];
     try {
       yieldLossRaw = await fetchCsvRows(GID_YIELDLOSS, 'YieldLoss Data');
+      const headersFound = yieldLossRaw.length ? Object.keys(yieldLossRaw[0]) : [];
+      console.log('YieldLoss Data: โหลดได้', yieldLossRaw.length, 'แถว | หัวคอลัมน์ที่เจอ:', headersFound);
+      window.__yieldLossDiag = {rowCount: yieldLossRaw.length, headers: headersFound, fetchFailed: false};
     } catch(e2) {
-      console.error('YieldLoss Data (remaining weight) failed to load, showing empty:', e2);
+      console.error('YieldLoss Data (remaining weight / %Yield) failed to load, showing empty:', e2);
+      window.__yieldLossDiag = {rowCount: 0, headers: [], fetchFailed: true, error: e2.message};
     }
     let west_by_month = {CTW:{}, Thonglor:{}}; // empty fallback if the live fetch fails entirely
     try {
