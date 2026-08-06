@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Kozuri Handroll — Performance Dashboard</title>
+<title>Kozue Omakase — Performance Dashboard</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Noto+Serif+Thai:wght@600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -191,8 +191,8 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
 <div class="topbar">
   <div class="topbar-inner">
     <div>
-      <div class="brand-eyebrow">Kozuri Handroll</div>
-      <div class="brand-title">Performance Dashboard</div>
+      <div class="brand-eyebrow">Performance Dashboard</div>
+      <div class="brand-title">Kozuri Handroll</div>
       <div class="brand-sub">CTW · Thonglor — ยอดขาย, SET/ROLLS, Top Items &amp; Fish Yield</div>
     </div>
     <div class="controls">
@@ -291,6 +291,19 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
   <div class="page" id="page2">
 
     <div class="section-title"><span class="num">04</span><h2>Yield Loss — <span id="yieldLossMonthLabel"></span></h2><span class="rule"></span></div>
+    <div class="card" style="margin-bottom:18px;">
+      <h3>
+        <span class="dot ctw"></span> CTW <span class="dot tl" style="margin-left:10px"></span> Thonglor — Yield เทียบ Target ตามสาขา
+        <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-weight:400; font-size:12.5px;">
+          ITEM
+          <select id="yieldLossItemFilter" style="font-family:'Sarabun',sans-serif; font-size:12.5px; padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:#fff;"></select>
+        </span>
+      </h3>
+      <div class="raw-note" style="margin-bottom:8px;">
+        Yield จริง = ค่ามัธยฐาน (Median) ของ Yield ที่บันทึกไว้ต่อรายการต่อสาขา &nbsp;|&nbsp; Target = ค่าเฉลี่ยของ 30% ที่สูงที่สุดในอดีต (Avg Top 30%) ต่อรายการ (รวมทั้งสองสาขา) &nbsp;·&nbsp; แท่งแสดงเป็น %Target (ของแต่ละสาขา ÷ Target × 100)
+      </div>
+      <div class="chart-box" style="height:340px;"><canvas id="chartYieldLoss"></canvas></div>
+    </div>
     <div class="grid-2b" style="margin-bottom:18px;">
       <div class="card">
         <h3><span class="dot tl"></span> Thonglor</h3>
@@ -420,7 +433,7 @@ const fmtSigned = n => (n===null||n===undefined) ? '-' : (n>0?'+':'') + Math.rou
 const CTW_COLOR = '#274873', TL_COLOR = '#c9a961';
 let currentMonth = 6;
 let DATA = null;
-let scoreChart=null, gapChart=null, monthlySalesChart=null, setQtyChart=null, rollsBarChart=null, rollsRevenueChart=null;
+let scoreChart=null, gapChart=null, monthlySalesChart=null, setQtyChart=null, rollsBarChart=null, rollsRevenueChart=null, chartYieldLoss=null;
 
 Chart.defaults.font.family = "'Sarabun', sans-serif";
 Chart.defaults.color = '#5b6472';
@@ -934,10 +947,49 @@ function yieldLossTable(id, rows){
   const formatRow = r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num-cell">${fmtNum(r[2])}</td></tr>`;
   renderSortableTable(id, headers, rows, formatRow, 1, 'desc');
 }
+let yieldLossItemFilter = 'all';
 function buildYieldLoss(m){
   document.getElementById('yieldLossMonthLabel').textContent = MON_LABELS[m] + ' 2026';
   yieldLossTable('yieldLossTL', DATA.yield_loss_by_month.Thonglor[m] || []);
   yieldLossTable('yieldLossCTW', DATA.yield_loss_by_month.CTW[m] || []);
+
+  const sel = document.getElementById('yieldLossItemFilter');
+  if(sel.options.length===0){
+    const stats = DATA.yield_loss_stats || [];
+    sel.innerHTML = '<option value="all">ทุกรายการ</option>' + stats.map(s=>`<option value="${s.item}">${s.item}</option>`).join('');
+    sel.addEventListener('change', ()=>{ yieldLossItemFilter = sel.value; renderYieldLossChart(); });
+  }
+  renderYieldLossChart();
+}
+function renderYieldLossChart(){
+  const allStats = DATA.yield_loss_stats || [];
+  const stats = yieldLossItemFilter==='all' ? allStats : allStats.filter(s=>s.item===yieldLossItemFilter);
+  if(chartYieldLoss) chartYieldLoss.destroy();
+  if(!stats.length) return;
+  chartYieldLoss = new Chart(document.getElementById('chartYieldLoss'), {
+    data:{
+      labels: stats.map(s=>s.item),
+      datasets:[
+        {type:'bar', label:'CTW', data:stats.map(s=>s.ctwPct), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:34, order:2},
+        {type:'bar', label:'Thonglor', data:stats.map(s=>s.tlPct), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:34, order:2},
+        {type:'line', label:'Target', data:stats.map(()=>100), borderColor:'#9a958a', borderDash:[6,4], borderWidth:2, pointRadius:0,
+          fill:{target:'origin', above:'rgba(211,71,63,0.07)'}, tension:0, order:1},
+      ]
+    },
+    options:{maintainAspectRatio:false, layout:{padding:{top:30}},
+      plugins:{legend:{position:'top', align:'start', labels:{boxWidth:10, boxHeight:10}},
+        tooltip:{callbacks:{label:c=> c.dataset.label + ': ' + (c.parsed.y==null?'-':c.parsed.y.toFixed(0)+'%') }},
+        datalabels:{
+          display: ctx => ctx.dataset.type==='bar',
+          anchor:'end', align:'top', offset:2, font:{size:10, weight:'700'},
+          color: ctx => ctx.dataset.label==='CTW' ? CTW_COLOR : '#8a6d2a',
+          formatter: v => v==null ? '' : v.toFixed(0)+'%'
+        }},
+      scales:{
+        y:{min:0, ticks:{callback:v=>v+'%'}, grid:{color:'#eee7d6'}},
+        x:{grid:{display:false}, ticks:{autoSkip:false, maxRotation:45, minRotation:stats.length>6?30:0}}
+      }}
+  });
 }
 function buildYield(m){
   document.getElementById('yieldMonthLabel').textContent = MON_LABELS[m] + ' 2026';
@@ -1369,6 +1421,49 @@ function buildYieldLossByMonth(rows){
   }
   return out;
 }
+// Statistical summary per item: "actual" per branch = median of that item's recorded Yield values
+// (median instead of mode, since these are continuous weight readings where an exact-value mode
+// is rarely meaningful — mode only makes sense for data that clusters into a handful of repeated
+// values, e.g. a true percentage metric; unlike raw weight in grams). "Target" = average of the
+// top 30% of ALL historical observations for that item (both branches combined) — i.e. what's
+// achievable when things go well, matching the "Avg Max of Yield%" methodology from the reference
+// chart. Each branch's bar is then expressed as %Target = branch median ÷ Target × 100.
+function median(arr){
+  if(!arr.length) return null;
+  const s = [...arr].sort((a,b)=>a-b);
+  const mid = Math.floor(s.length/2);
+  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+}
+function avgTopFraction(arr, frac){
+  if(!arr.length) return null;
+  const s = [...arr].sort((a,b)=>b-a);
+  const n = Math.max(1, Math.round(s.length*frac));
+  return s.slice(0,n).reduce((a,c)=>a+c,0)/n;
+}
+function buildYieldLossStats(rows){
+  const byItem = {};        // item -> [values] across both branches (for Target)
+  const byItemBranch = {};  // "item|branch" -> [values]
+  rows.forEach(r=>{
+    (byItem[r.item] = byItem[r.item] || []).push(r.weight);
+    const key = r.item + '|' + (r.branch || 'ALL');
+    (byItemBranch[key] = byItemBranch[key] || []).push(r.weight);
+  });
+  const stats = Object.keys(byItem).map(item=>{
+    const target = avgTopFraction(byItem[item], 0.3);
+    const ctwVals = byItemBranch[item+'|CTW'] || [];
+    const tlVals = byItemBranch[item+'|Thonglor'] || [];
+    const ctwMed = median(ctwVals), tlMed = median(tlVals);
+    return {
+      item,
+      n: byItem[item].length,
+      target: target,
+      ctw: ctwMed, ctwPct: (ctwMed!==null && target) ? Math.round(ctwMed/target*1000)/10 : null,
+      tl: tlMed, tlPct: (tlMed!==null && target) ? Math.round(tlMed/target*1000)/10 : null,
+    };
+  });
+  stats.sort((a,b)=> (b.target||0) - (a.target||0));
+  return stats;
+}
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
 // with the real header row appearing a couple of rows down (not row 1), so we parse as a raw grid
 // and locate the header row by searching for "CATEGORY" rather than assuming header:true.
@@ -1689,6 +1784,7 @@ async function loadAllDataAndInit(silent=false){
     // on demand since baseline months and target month are now user-configurable (section 02b).
     const remaining_weight_by_month = buildRemainingWeightByMonth(yieldLoss);
     const yield_loss_by_month = buildYieldLossByMonth(yieldLoss);
+    const yield_loss_stats = buildYieldLossStats(yieldLoss);
 
     DATA = {
       monthly_sales, set_qty_trend, roll_table_by_month, top_alc_by_month, top_bev_by_month,
@@ -1697,6 +1793,7 @@ async function loadAllDataAndInit(silent=false){
       menu_data_raw: menuRaw,
       remaining_weight_by_month,
       yield_loss_by_month,
+      yield_loss_stats,
     };
 
     // Detect the latest month that actually has sales data (instead of hardcoding June) —
