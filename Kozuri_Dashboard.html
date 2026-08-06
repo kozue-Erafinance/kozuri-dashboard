@@ -938,13 +938,20 @@ function buildYield(m){
   function renderWestDiag(elId, branch){
     const el = document.getElementById(elId);
     const d = window.__westDiag && window.__westDiag[branch];
-    if(!d){ el.textContent = ''; return; }
-    if(d.priceCount===0){
-      el.innerHTML = '<span class="chg-down">⚠ หาแท็บ "PRICE" ไม่เจอ/โหลดไม่สำเร็จ — มูลค่าจะเป็น 0 ทั้งหมด (เช็ค Console)</span>';
+    let html = '';
+    if(!d){
+      html = '';
+    } else if(d.priceCount===0){
+      html = '<span class="chg-down">⚠ หาแท็บ "PRICE" ไม่เจอ/โหลดไม่สำเร็จ — มูลค่าจะเป็น 0 ทั้งหมด (เช็ค Console)</span>';
     } else {
       const u = [...d.unmatched];
-      el.textContent = `price lookup: ${d.priceCount} รายการ` + (u.length ? ` · จับคู่ชื่อไม่เจอ ${u.length} รายการ เช่น "${u.slice(0,3).join('", "')}"` : '');
+      html = `price lookup: ${d.priceCount} รายการ` + (u.length ? ` · จับคู่ชื่อไม่เจอ ${u.length} รายการ เช่น "${u.slice(0,3).join('", "')}"` : '');
     }
+    const si = window.__westSauceInfo && window.__westSauceInfo[branch] && window.__westSauceInfo[branch][m];
+    if(si){
+      html += (html?' · ':'') + `SAUCE เดือนนี้: เจอ ${si.sauceRowCount} รายการ, มีของเสีย(WT&gt;0) ${si.sauceRowsWithWaste} รายการ (รวม ${si.sauceWasteTotal})`;
+    }
+    el.innerHTML = html;
   }
   renderWestDiag('westDiagTL', 'Thonglor');
   renderWestDiag('westDiagCTW', 'CTW');
@@ -1433,10 +1440,22 @@ async function buildWestByMonthLive(){
     console.log(`West ${b}: price lookup มี ${diag[b].priceCount} รายการ | รายการที่มี waste แต่หาราคาไม่เจอ: ${u.length} รายการ`, u.slice(0,15));
   });
   // Diagnostic: show the actual distinct CATEGORY strings read from the West column B, so it's
-  // obvious whether "SAUCE" (used by the exclude-SAUCE filter) really matches what's in the sheet.
+  // obvious whether "SAUCE" (used by the exclude-SAUCE filter) really matches what's in the sheet —
+  // plus, per month, how many SAUCE rows actually have waste > 0 (if it's 0, excluding SAUCE won't
+  // visibly change anything for that month, which is expected, not a bug).
+  window.__westSauceInfo = {CTW:{}, Thonglor:{}};
   ['CTW','Thonglor'].forEach(b=>{
     const cats = new Set();
-    for(let m=1;m<=12;m++){ (out[b][m]||[]).forEach(r=>{ if(r[1]) cats.add(r[1]); }); }
+    for(let m=1;m<=12;m++){
+      const rows = out[b][m]||[];
+      rows.forEach(r=>{ if(r[1]) cats.add(r[1]); });
+      const sauceRows = rows.filter(r=>normalizeName(r[1]).includes('sauce'));
+      window.__westSauceInfo[b][m] = {
+        sauceRowCount: sauceRows.length,
+        sauceRowsWithWaste: sauceRows.filter(r=>r[3]>0).length,
+        sauceWasteTotal: sauceRows.reduce((s,r)=>s+(r[3]||0),0),
+      };
+    }
     console.log(`West ${b}: หมวด (CATEGORY) ที่เจอทั้งหมด:`, [...cats]);
   });
   window.__westDiag = diag; // for on-screen display
