@@ -916,10 +916,10 @@ function adjustYieldItems(items, branch, month, mode){
     return {items, costGapTotal};
   }
   const endMap = {};
-  (DATA.remaining_weight_by_month[branch][month]||[]).forEach(([name,weight])=>{ endMap[normalizeName(name)] = weight; });
+  getEffectiveRemainingWeight(branch, month).forEach(({name,weight})=>{ endMap[normalizeName(name)] = weight; });
   const prevEndMap = {};
   if(mode==='startend'){
-    (DATA.remaining_weight_by_month[branch][month-1]||[]).forEach(([name,weight])=>{ prevEndMap[normalizeName(name)] = weight; });
+    getEffectiveRemainingWeight(branch, month-1).forEach(({name,weight})=>{ prevEndMap[normalizeName(name)] = weight; });
   }
   let costGapTotal = 0;
   const adjItems = items.map(it=>{
@@ -984,8 +984,8 @@ function renderYieldLossChart(){
     data:{
       labels: stats.map(s=>s.item),
       datasets:[
-        {type:'bar', label:'CTW', data:stats.map(s=>s.ctw), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:34, order:2},
-        {type:'bar', label:'Thonglor', data:stats.map(s=>s.tl), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:34, order:2},
+        {type:'bar', label:'CTW', data:stats.map(s=>s.ctw), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:34, order:2, barPercentage:0.98, categoryPercentage:0.85},
+        {type:'bar', label:'Thonglor', data:stats.map(s=>s.tl), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:34, order:2, barPercentage:0.98, categoryPercentage:0.85},
         {type:'line', label:'Target (P70)', data:stats.map(s=>s.target), borderColor:'#9a958a', borderDash:[6,4], borderWidth:2, pointRadius:0,
           fill:{target:'origin', above:'rgba(211,71,63,0.07)'}, tension:0, order:1},
       ]
@@ -994,9 +994,12 @@ function renderYieldLossChart(){
       plugins:{legend:{position:'top', align:'start', labels:{boxWidth:10, boxHeight:10}},
         tooltip:{callbacks:{label:c=> c.dataset.label + ': ' + (c.parsed.y==null?'-':c.parsed.y.toFixed(1)+'%') }},
         datalabels:{
-          display: ctx => ctx.dataset.type==='bar',
-          anchor:'end', align:'top', offset:2, font:{size:10, weight:'700'},
-          color: ctx => ctx.dataset.label==='CTW' ? CTW_COLOR : '#8a6d2a',
+          display: true,
+          anchor: ctx => ctx.dataset.type==='line' ? 'end' : 'end',
+          align: ctx => ctx.dataset.type==='line' ? 'bottom' : 'top',
+          offset: ctx => ctx.dataset.type==='line' ? 3 : 2,
+          font: ctx => ctx.dataset.type==='line' ? {size:9.5, weight:'700', style:'italic'} : {size:10, weight:'700'},
+          color: ctx => ctx.dataset.type==='line' ? '#9a958a' : (ctx.dataset.label==='CTW' ? CTW_COLOR : '#8a6d2a'),
           formatter: v => v==null ? '' : v.toFixed(0)+'%'
         }},
       scales:{
@@ -1102,9 +1105,12 @@ function savePdtOverrides(branch, month, data){
   try { localStorage.setItem(pdtStorageKey(branch, month), JSON.stringify(data)); }
   catch(e){ console.error('บันทึกการแก้ไข "น้ำหนักที่เหลือ" ไม่สำเร็จ (localStorage เต็มหรือถูกปิดใช้งาน):', e); }
 }
-function pdtTable(id, rows, branch, month){
-  // rows: [item, weight] — from YieldLoss Data sheet (Main Item, DATE, Yield), matched to the last day of the selected month
-  const priceMap = window.__westPriceMap || {};
+// Merges the live-fetched "remaining weight" rows with any user edits/added items saved in
+// localStorage (see pdtTable) — this is the SAME merge used both to render the editable table
+// AND to feed the Cost Gap adjustment modes, so manual corrections there actually take effect
+// in Cost Gap too, not just in the table display.
+function getEffectiveRemainingWeight(branch, month){
+  const rows = (DATA.remaining_weight_by_month[branch]||{})[month] || [];
   const overrides = loadPdtOverrides(branch, month);
   let merged = rows.map(([name, weight])=>{
     const key = normalizeName(name);
@@ -1115,6 +1121,12 @@ function pdtTable(id, rows, branch, month){
   (overrides.added||[]).forEach(a=>{
     if(!existingKeys.has(normalizeName(a.name))) merged.push({name:a.name, weight:a.weight, added:true});
   });
+  return merged;
+}
+function pdtTable(id, rows, branch, month){
+  // rows: [item, weight] — from YieldLoss Data sheet (Main Item, DATE, Yield), matched to the last day of the selected month
+  const priceMap = window.__westPriceMap || {};
+  let merged = getEffectiveRemainingWeight(branch, month);
   merged.sort((a,b)=>b.weight-a.weight);
 
   const rowsHtml = merged.map(r=>{
