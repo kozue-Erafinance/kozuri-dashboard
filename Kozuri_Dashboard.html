@@ -1179,10 +1179,10 @@ function pdtAddItem(branch, month){
   updatePdtDisplay(branch, month);
 }
 function updatePdtDisplay(branch, month){
-  const id = branch==='Thonglor' ? 'pdtTL' : 'pdtCTW';
-  const valueId = branch==='Thonglor' ? 'pdtValueTL' : 'pdtValueCTW';
-  const total = pdtTable(id, DATA.remaining_weight_by_month[branch][month] || [], branch, month);
-  document.getElementById(valueId).textContent = 'มูลค่ารวม ฿' + fmtNum(total);
+  // A "น้ำหนักที่เหลือ" edit/add also feeds the Cost Gap calculation (via getEffectiveRemainingWeight),
+  // so re-run the whole buildYield() — not just re-render the pdt table itself — otherwise the
+  // Cost Gap table above stays visually stale until the next month/mode change.
+  buildYield(month);
 }
 function yieldTable(id, items){
   const headers = [
