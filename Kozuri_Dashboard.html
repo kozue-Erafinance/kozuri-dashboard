@@ -293,26 +293,16 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
     <div class="section-title"><span class="num">04</span><h2>Yield Loss — <span id="yieldLossMonthLabel"></span></h2><span class="rule"></span></div>
     <div class="card" style="margin-bottom:18px;">
       <h3>
-        <span class="dot ctw"></span> CTW <span class="dot tl" style="margin-left:10px"></span> Thonglor — Yield เทียบ Target ตามสาขา
+        <span class="dot ctw"></span> CTW <span class="dot tl" style="margin-left:10px"></span> Thonglor — %Yield เทียบ Target ตามสาขา
         <span style="margin-left:auto; display:flex; align-items:center; gap:6px; font-weight:400; font-size:12.5px;">
           ITEM
           <select id="yieldLossItemFilter" style="font-family:'Sarabun',sans-serif; font-size:12.5px; padding:5px 8px; border-radius:8px; border:1px solid var(--line); background:#fff;"></select>
         </span>
       </h3>
       <div class="raw-note" style="margin-bottom:8px;">
-        Yield จริง = ค่ามัธยฐาน (Median) ของ Yield ที่บันทึกไว้ต่อรายการต่อสาขา &nbsp;|&nbsp; Target = ค่าเฉลี่ยของ 30% ที่สูงที่สุดในอดีต (Avg Top 30%) ต่อรายการ (รวมทั้งสองสาขา) &nbsp;·&nbsp; แท่งแสดงเป็น %Target (ของแต่ละสาขา ÷ Target × 100)
+        %Yield = Avg Yield% (คอลัมน์ I ของชีท ซื้อปลา) ของเดือนที่เลือกไว้ด้านบน &nbsp;|&nbsp; %Yield Target = เปอร์เซ็นไทล์ 70 ของ Avg Yield% ทุกเดือนที่มีข้อมูล (ต่อรายการ รวมทั้งสองสาขา)
       </div>
       <div class="chart-box" style="height:340px;"><canvas id="chartYieldLoss"></canvas></div>
-    </div>
-    <div class="grid-2b" style="margin-bottom:18px;">
-      <div class="card">
-        <h3><span class="dot tl"></span> Thonglor</h3>
-        <div style="max-height:340px; overflow:auto;"><table id="yieldLossTL"></table></div>
-      </div>
-      <div class="card">
-        <h3><span class="dot ctw"></span> CTW</h3>
-        <div style="max-height:340px; overflow:auto;"><table id="yieldLossCTW"></table></div>
-      </div>
     </div>
 
     <div class="section-title"><span class="num">05</span><h2>Fish Yield &amp; Cost Gap — <span id="yieldMonthLabel"></span></h2><span class="rule"></span></div>
@@ -337,8 +327,11 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
             <div style="max-height:340px; overflow:auto;"><table id="westTL"></table></div>
           </div>
           <div>
-            <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelTL">น้ำหนักที่เหลือ</div>
-            <div style="margin-bottom:5px;" class="pct-gap-tag neg" id="pdtValueTL"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap;">
+              <span class="raw-note" id="pdtLabelTL" style="margin-bottom:0;">น้ำหนักที่เหลือ</span>
+              <span class="pct-gap-tag neg" id="pdtValueTL"></span>
+              <button class="top-n-btn" id="pdtAddBtnTL" style="margin-left:auto; padding:3px 10px; font-size:11.5px;">+ Add Item</button>
+            </div>
             <div style="max-height:340px; overflow:auto;"><table id="pdtTL"></table></div>
           </div>
         </div>
@@ -358,8 +351,11 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
             <div style="max-height:340px; overflow:auto;"><table id="westCTW"></table></div>
           </div>
           <div>
-            <div class="raw-note" style="margin-bottom:5px;" id="pdtLabelCTW">น้ำหนักที่เหลือ</div>
-            <div style="margin-bottom:5px;" class="pct-gap-tag neg" id="pdtValueCTW"></div>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:5px; flex-wrap:wrap;">
+              <span class="raw-note" id="pdtLabelCTW" style="margin-bottom:0;">น้ำหนักที่เหลือ</span>
+              <span class="pct-gap-tag neg" id="pdtValueCTW"></span>
+              <button class="top-n-btn" id="pdtAddBtnCTW" style="margin-left:auto; padding:3px 10px; font-size:11.5px;">+ Add Item</button>
+            </div>
             <div style="max-height:340px; overflow:auto;"><table id="pdtCTW"></table></div>
           </div>
         </div>
@@ -938,47 +934,45 @@ function adjustYieldItems(items, branch, month, mode){
   });
   return {items:adjItems, costGapTotal};
 }
-function yieldLossTable(id, rows){
-  const headers = [
-    {label:'รายการ', key:r=>r[0], numeric:false},
-    {label:'วันที่', key:r=>r[1], numeric:false},
-    {label:'Yield', key:r=>r[2], numeric:true},
-  ];
-  const formatRow = r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num-cell">${fmtNum(r[2])}</td></tr>`;
-  renderSortableTable(id, headers, rows, formatRow, 1, 'desc');
-}
 let yieldLossItemFilter = 'all';
 function buildYieldLoss(m){
   document.getElementById('yieldLossMonthLabel').textContent = MON_LABELS[m] + ' 2026';
-  yieldLossTable('yieldLossTL', DATA.yield_loss_by_month.Thonglor[m] || []);
-  yieldLossTable('yieldLossCTW', DATA.yield_loss_by_month.CTW[m] || []);
 
   const sel = document.getElementById('yieldLossItemFilter');
   if(sel.options.length===0){
-    const stats = DATA.yield_loss_stats || [];
-    sel.innerHTML = '<option value="all">ทุกรายการ</option>' + stats.map(s=>`<option value="${s.item}">${s.item}</option>`).join('');
+    const items = Object.keys(DATA.yield_targets || {}).sort();
+    sel.innerHTML = '<option value="all">ทุกรายการ</option>' + items.map(item=>`<option value="${item}">${item}</option>`).join('');
     sel.addEventListener('change', ()=>{ yieldLossItemFilter = sel.value; renderYieldLossChart(); });
   }
   renderYieldLossChart();
 }
 function renderYieldLossChart(){
-  const allStats = DATA.yield_loss_stats || [];
-  const stats = yieldLossItemFilter==='all' ? allStats : allStats.filter(s=>s.item===yieldLossItemFilter);
+  const m = currentMonth;
+  const targets = DATA.yield_targets || {};
+  const ctwMap = (DATA.avg_yield_by_month.CTW||{})[m] || {};
+  const tlMap = (DATA.avg_yield_by_month.Thonglor||{})[m] || {};
+  let items = [...new Set([...Object.keys(ctwMap), ...Object.keys(tlMap)])];
+  if(yieldLossItemFilter!=='all') items = items.filter(i=>i===yieldLossItemFilter);
+  let stats = items.map(item=>({
+    item, target: targets[item] ?? null,
+    ctw: ctwMap[item] ?? null, tl: tlMap[item] ?? null,
+  }));
+  stats.sort((a,b)=> (b.target||0) - (a.target||0));
   if(chartYieldLoss) chartYieldLoss.destroy();
   if(!stats.length) return;
   chartYieldLoss = new Chart(document.getElementById('chartYieldLoss'), {
     data:{
       labels: stats.map(s=>s.item),
       datasets:[
-        {type:'bar', label:'CTW', data:stats.map(s=>s.ctwPct), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:34, order:2},
-        {type:'bar', label:'Thonglor', data:stats.map(s=>s.tlPct), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:34, order:2},
-        {type:'line', label:'Target', data:stats.map(()=>100), borderColor:'#9a958a', borderDash:[6,4], borderWidth:2, pointRadius:0,
+        {type:'bar', label:'CTW', data:stats.map(s=>s.ctw), backgroundColor:CTW_COLOR, borderRadius:4, maxBarThickness:34, order:2},
+        {type:'bar', label:'Thonglor', data:stats.map(s=>s.tl), backgroundColor:TL_COLOR, borderRadius:4, maxBarThickness:34, order:2},
+        {type:'line', label:'Target (P70)', data:stats.map(s=>s.target), borderColor:'#9a958a', borderDash:[6,4], borderWidth:2, pointRadius:0,
           fill:{target:'origin', above:'rgba(211,71,63,0.07)'}, tension:0, order:1},
       ]
     },
     options:{maintainAspectRatio:false, layout:{padding:{top:30}},
       plugins:{legend:{position:'top', align:'start', labels:{boxWidth:10, boxHeight:10}},
-        tooltip:{callbacks:{label:c=> c.dataset.label + ': ' + (c.parsed.y==null?'-':c.parsed.y.toFixed(0)+'%') }},
+        tooltip:{callbacks:{label:c=> c.dataset.label + ': ' + (c.parsed.y==null?'-':c.parsed.y.toFixed(1)+'%') }},
         datalabels:{
           display: ctx => ctx.dataset.type==='bar',
           anchor:'end', align:'top', offset:2, font:{size:10, weight:'700'},
@@ -1045,10 +1039,14 @@ function buildYield(m){
   const dateLabel = 'น้ำหนักที่เหลือ (' + lastDayLabel(m) + ')';
   document.getElementById('pdtLabelTL').textContent = dateLabel;
   document.getElementById('pdtLabelCTW').textContent = dateLabel;
-  const pdtTLTotal = pdtTable('pdtTL', DATA.remaining_weight_by_month.Thonglor[m] || []);
-  const pdtCTWTotal = pdtTable('pdtCTW', DATA.remaining_weight_by_month.CTW[m] || []);
+  const pdtTLTotal = pdtTable('pdtTL', DATA.remaining_weight_by_month.Thonglor[m] || [], 'Thonglor', m);
+  const pdtCTWTotal = pdtTable('pdtCTW', DATA.remaining_weight_by_month.CTW[m] || [], 'CTW', m);
   document.getElementById('pdtValueTL').textContent = 'มูลค่ารวม ฿' + fmtNum(pdtTLTotal);
   document.getElementById('pdtValueCTW').textContent = 'มูลค่ารวม ฿' + fmtNum(pdtCTWTotal);
+  const addBtnTL = document.getElementById('pdtAddBtnTL');
+  const addBtnCTW = document.getElementById('pdtAddBtnCTW');
+  addBtnTL.onclick = () => pdtAddItem('Thonglor', currentMonth);
+  addBtnCTW.onclick = () => pdtAddItem('CTW', currentMonth);
 }
 function westTable(id, rows, excludeSauce){
   let filtered = rows.filter(r => r[3] > 0);
@@ -1067,24 +1065,92 @@ function westTable(id, rows, excludeSauce){
   renderSortableTable(id, headers, filtered, formatRow, 1, 'desc');
   return filtered.reduce((s,r)=>s+(r[4]||0), 0);
 }
-function pdtTable(id, rows){
+// น้ำหนักที่เหลือ table is editable in the browser: weight values can be corrected, and new items
+// can be added. Since this is a static file (not a Claude.ai artifact — no window.storage API,
+// and no write access back to the Google Sheet), edits are saved to the browser's localStorage,
+// scoped to (branch, month). This means: edits persist across refreshes ON THIS BROWSER/DEVICE
+// ONLY — they do NOT sync to Google Sheets and are NOT visible to anyone opening the dashboard on
+// a different device or browser. Clear browser data / a different device = edits are lost.
+function pdtStorageKey(branch, month){ return `pdt_overrides_v1_${branch}_${month}`; }
+function loadPdtOverrides(branch, month){
+  try {
+    const raw = localStorage.getItem(pdtStorageKey(branch, month));
+    return raw ? JSON.parse(raw) : {edits:{}, added:[]};
+  } catch(e){ return {edits:{}, added:[]}; }
+}
+function savePdtOverrides(branch, month, data){
+  try { localStorage.setItem(pdtStorageKey(branch, month), JSON.stringify(data)); }
+  catch(e){ console.error('บันทึกการแก้ไข "น้ำหนักที่เหลือ" ไม่สำเร็จ (localStorage เต็มหรือถูกปิดใช้งาน):', e); }
+}
+function pdtTable(id, rows, branch, month){
   // rows: [item, weight] — from YieldLoss Data sheet (Main Item, DATE, Yield), matched to the last day of the selected month
   const priceMap = window.__westPriceMap || {};
-  const withValue = rows.map(([name, weight])=>{
-    const price = priceMap[normalizeName(name)] ?? 0;
-    return [name, weight, weight*price];
+  const overrides = loadPdtOverrides(branch, month);
+  let merged = rows.map(([name, weight])=>{
+    const key = normalizeName(name);
+    const w = overrides.edits[key]!==undefined ? overrides.edits[key] : weight;
+    return {name, weight:w, added:false};
   });
-  const headers = [
-    {label:'รายการ', key:r=>r[0], numeric:false},
-    {label:'น้ำหนักที่เหลือ', key:r=>r[1], numeric:true},
-    {label:'มูลค่า', key:r=>r[2], numeric:true},
-  ];
-  const formatRow = r=>{
-    const [name, weight, value] = r;
-    return `<tr><td>${name}</td><td class="num-cell">${fmtNum(weight)}</td><td class="num-cell">฿${fmtNum(value||0)}</td></tr>`;
-  };
-  renderSortableTable(id, headers, withValue, formatRow, 1, 'desc');
-  return withValue.reduce((s,r)=>s+(r[2]||0), 0);
+  const existingKeys = new Set(merged.map(r=>normalizeName(r.name)));
+  (overrides.added||[]).forEach(a=>{
+    if(!existingKeys.has(normalizeName(a.name))) merged.push({name:a.name, weight:a.weight, added:true});
+  });
+  merged.sort((a,b)=>b.weight-a.weight);
+
+  const rowsHtml = merged.map(r=>{
+    const price = priceMap[normalizeName(r.name)] ?? 0;
+    const value = r.weight*price;
+    const nameCell = r.added
+      ? `<input type="text" class="pdt-name-input" data-orig="${encodeURIComponent(r.name)}" value="${r.name}" style="width:100%; border:1px solid var(--line); border-radius:4px; padding:2px 5px; font-size:12px;">`
+      : `<span>${r.name}</span>`;
+    return `<tr>
+      <td>${nameCell}</td>
+      <td class="num-cell"><input type="number" step="any" class="pdt-weight-input" data-name="${encodeURIComponent(r.name)}" value="${r.weight}" style="width:76px; text-align:right; border:1px solid var(--line); border-radius:4px; padding:2px 5px; font-size:12px;"></td>
+      <td class="num-cell">฿${fmtNum(value)}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById(id).innerHTML = `<thead><tr><th>รายการ</th><th>น้ำหนักที่เหลือ</th><th>มูลค่า</th></tr></thead><tbody>${rowsHtml || '<tr><td colspan="3" class="empty-note">ไม่มีข้อมูล</td></tr>'}</tbody>`;
+
+  const tableEl = document.getElementById(id);
+  tableEl.querySelectorAll('.pdt-weight-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const name = decodeURIComponent(inp.dataset.name);
+      const key = normalizeName(name);
+      const newWeight = parseFloat(inp.value) || 0;
+      const ov = loadPdtOverrides(branch, month);
+      const addedItem = (ov.added||[]).find(a=>normalizeName(a.name)===key);
+      if(addedItem){ addedItem.weight = newWeight; }
+      else { ov.edits[key] = newWeight; }
+      savePdtOverrides(branch, month, ov);
+      updatePdtDisplay(branch, month);
+    });
+  });
+  tableEl.querySelectorAll('.pdt-name-input').forEach(inp=>{
+    inp.addEventListener('change', ()=>{
+      const origKey = normalizeName(decodeURIComponent(inp.dataset.orig));
+      const newName = inp.value.trim() || 'รายการใหม่';
+      const ov = loadPdtOverrides(branch, month);
+      const addedItem = (ov.added||[]).find(a=>normalizeName(a.name)===origKey);
+      if(addedItem) addedItem.name = newName;
+      savePdtOverrides(branch, month, ov);
+      updatePdtDisplay(branch, month);
+    });
+  });
+
+  return merged.reduce((s,r)=>{ const price = priceMap[normalizeName(r.name)] ?? 0; return s + r.weight*price; }, 0);
+}
+function pdtAddItem(branch, month){
+  const ov = loadPdtOverrides(branch, month);
+  ov.added = ov.added || [];
+  ov.added.push({name:'รายการใหม่', weight:0});
+  savePdtOverrides(branch, month, ov);
+  updatePdtDisplay(branch, month);
+}
+function updatePdtDisplay(branch, month){
+  const id = branch==='Thonglor' ? 'pdtTL' : 'pdtCTW';
+  const valueId = branch==='Thonglor' ? 'pdtValueTL' : 'pdtValueCTW';
+  const total = pdtTable(id, DATA.remaining_weight_by_month[branch][month] || [], branch, month);
+  document.getElementById(valueId).textContent = 'มูลค่ารวม ฿' + fmtNum(total);
 }
 function yieldTable(id, items){
   const headers = [
@@ -1360,6 +1426,7 @@ function normalizeFishRows(raw){
     price_per_unit: toNum(r['Price per Unit']) || 0,
     unit_price: toNum(r['Unit Price']) || 0,
     score: toNum(r['SCORE']),
+    avg_yield_pct: toNum(r['Avg Yield%']), // column I — used for the Yield vs Target chart
   })).filter(r=>r.branch && r.month && r.item);
 }
 // Parse a date string of unknown format (YYYY-MM-DD, DD/MM/YYYY, or JS-parseable) into {y,mo,d}
@@ -1406,63 +1473,39 @@ function buildRemainingWeightByMonth(rows){
 }
 // Yield Loss detail table: EVERY entry within the selected month (not just the last-day snapshot
 // used for "remaining weight"), so the raw YieldLoss Data sheet is fully browsable per month.
-function buildYieldLossByMonth(rows){
-  const hasBranch = rows.some(r=>r.branch);
-  const out = {CTW:{}, Thonglor:{}};
-  for(let m=1;m<=12;m++){
-    const matches = rows.filter(r=>r.date.mo===m).map(r=>[r.item, `${String(r.date.d).padStart(2,'0')}/${String(r.date.mo).padStart(2,'0')}/${r.date.y}`, r.weight, r.branch||'']);
-    if(hasBranch){
-      out.CTW[m] = matches.filter(r=>r[3]==='CTW');
-      out.Thonglor[m] = matches.filter(r=>r[3]==='Thonglor');
-    } else {
-      out.CTW[m] = matches;
-      out.Thonglor[m] = matches;
-    }
-  }
-  return out;
-}
-// Statistical summary per item: "actual" per branch = median of that item's recorded Yield values
-// (median instead of mode, since these are continuous weight readings where an exact-value mode
-// is rarely meaningful — mode only makes sense for data that clusters into a handful of repeated
-// values, e.g. a true percentage metric; unlike raw weight in grams). "Target" = average of the
-// top 30% of ALL historical observations for that item (both branches combined) — i.e. what's
-// achievable when things go well, matching the "Avg Max of Yield%" methodology from the reference
-// chart. Each branch's bar is then expressed as %Target = branch median ÷ Target × 100.
-function median(arr){
+// %Yield vs Target chart: uses "Avg Yield%" (column I) directly from the ซื้อปลา (fish) sheet —
+// %Yield = that item/branch's Avg Yield% value for the selected month (used as-is, already a %).
+// %Yield Target = the 70th percentile of that item's Avg Yield% values across ALL months on record
+// (both branches combined) — a stable historical benchmark, not tied to the selected month.
+function percentile(arr, p){
   if(!arr.length) return null;
   const s = [...arr].sort((a,b)=>a-b);
-  const mid = Math.floor(s.length/2);
-  return s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
+  const idx = (p/100)*(s.length-1);
+  const lo = Math.floor(idx), hi = Math.ceil(idx);
+  if(lo===hi) return s[lo];
+  return s[lo] + (s[hi]-s[lo])*(idx-lo);
 }
-function avgTopFraction(arr, frac){
-  if(!arr.length) return null;
-  const s = [...arr].sort((a,b)=>b-a);
-  const n = Math.max(1, Math.round(s.length*frac));
-  return s.slice(0,n).reduce((a,c)=>a+c,0)/n;
+function buildAvgYieldByMonth(fish){
+  const out = {CTW:{}, Thonglor:{}};
+  ['CTW','Thonglor'].forEach(b=>{
+    for(let m=1;m<=12;m++){
+      const map = {};
+      fish.filter(r=>r.branch===b && r.month===m).forEach(r=>{
+        if(r.avg_yield_pct!==null) map[r.item] = r.avg_yield_pct;
+      });
+      out[b][m] = map;
+    }
+  });
+  return out;
 }
-function buildYieldLossStats(rows){
-  const byItem = {};        // item -> [values] across both branches (for Target)
-  const byItemBranch = {};  // "item|branch" -> [values]
-  rows.forEach(r=>{
-    (byItem[r.item] = byItem[r.item] || []).push(r.weight);
-    const key = r.item + '|' + (r.branch || 'ALL');
-    (byItemBranch[key] = byItemBranch[key] || []).push(r.weight);
+function buildYieldTargets(fish){
+  const byItem = {};
+  fish.forEach(r=>{
+    if(r.avg_yield_pct!==null) (byItem[r.item] = byItem[r.item] || []).push(r.avg_yield_pct);
   });
-  const stats = Object.keys(byItem).map(item=>{
-    const target = avgTopFraction(byItem[item], 0.3);
-    const ctwVals = byItemBranch[item+'|CTW'] || [];
-    const tlVals = byItemBranch[item+'|Thonglor'] || [];
-    const ctwMed = median(ctwVals), tlMed = median(tlVals);
-    return {
-      item,
-      n: byItem[item].length,
-      target: target,
-      ctw: ctwMed, ctwPct: (ctwMed!==null && target) ? Math.round(ctwMed/target*1000)/10 : null,
-      tl: tlMed, tlPct: (tlMed!==null && target) ? Math.round(tlMed/target*1000)/10 : null,
-    };
-  });
-  stats.sort((a,b)=> (b.target||0) - (a.target||0));
-  return stats;
+  const targets = {};
+  Object.keys(byItem).forEach(item=>{ targets[item] = percentile(byItem[item], 70); });
+  return targets;
 }
 // ---- West (waste) tab fetch: columns are fixed-position (B=CATEGORY, C=NAME, D=PDT, E=PDT unit, F=WT, G=WT unit),
 // with the real header row appearing a couple of rows down (not row 1), so we parse as a raw grid
@@ -1783,8 +1826,8 @@ async function loadAllDataAndInit(silent=false){
     // share_shift_analysis is no longer precomputed here — buildSubstitution() computes it fresh
     // on demand since baseline months and target month are now user-configurable (section 02b).
     const remaining_weight_by_month = buildRemainingWeightByMonth(yieldLoss);
-    const yield_loss_by_month = buildYieldLossByMonth(yieldLoss);
-    const yield_loss_stats = buildYieldLossStats(yieldLoss);
+    const avg_yield_by_month = buildAvgYieldByMonth(fish);
+    const yield_targets = buildYieldTargets(fish);
 
     DATA = {
       monthly_sales, set_qty_trend, roll_table_by_month, top_alc_by_month, top_bev_by_month,
@@ -1792,8 +1835,8 @@ async function loadAllDataAndInit(silent=false){
       west_by_month,
       menu_data_raw: menuRaw,
       remaining_weight_by_month,
-      yield_loss_by_month,
-      yield_loss_stats,
+      avg_yield_by_month,
+      yield_targets,
     };
 
     // Detect the latest month that actually has sales data (instead of hardcoding June) —
