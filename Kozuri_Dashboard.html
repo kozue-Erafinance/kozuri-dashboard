@@ -81,7 +81,7 @@ tr:last-child td{border-bottom:none;}
 .num-cell{text-align:right; font-variant-numeric:tabular-nums;}
 .chg-up{color:var(--up); font-weight:600;} .chg-down{color:var(--down); font-weight:600;}
 
-.rank-bar-row{display:grid; grid-template-columns:150px 1fr 42px; align-items:center; gap:6px; padding:1.5px 0; line-height:1.15;}
+.rank-bar-row{display:grid; grid-template-columns:150px 1fr 92px; align-items:center; gap:6px; padding:1.5px 0; line-height:1.15;}
 .rank-name{font-size:13.75px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 .rank-track{background:#f0ede4; border-radius:4px; height:9px; position:relative;}
 .rank-pct-onbar{position:absolute; top:50%; transform:translateY(-50%); font-size:9.9px; font-weight:700; color:#5b5142; white-space:nowrap; line-height:1;}
@@ -92,7 +92,8 @@ tr:last-child td{border-bottom:none;}
 .sub-fill.shift-down{background:linear-gradient(90deg,#b3423a,#d1685f);}
 .sub-fill.shift-tl{background:linear-gradient(90deg,#c9a961,#e0c383);}
 .sub-fill.shift-ctw{background:linear-gradient(90deg,#274873,#4169a3);}
-.rank-qty{font-size:13.2px; color:var(--ink-soft); font-weight:600; min-width:34px; text-align:left;}
+.rank-qty{font-size:13.2px; color:var(--ink-soft); font-weight:600; min-width:34px; text-align:left; white-space:nowrap;}
+.rank-mom{font-size:10.5px; font-weight:700; margin-left:2px;}
 
 .top-n-tabs{display:flex; gap:6px; margin-bottom:14px;}
 .top-n-btn{
@@ -289,7 +290,19 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
   <!-- ============ PAGE 2 ============ -->
   <div class="page" id="page2">
 
-    <div class="section-title"><span class="num">04</span><h2>Fish Yield &amp; Cost Gap — <span id="yieldMonthLabel"></span></h2><span class="rule"></span></div>
+    <div class="section-title"><span class="num">04</span><h2>Yield Loss — <span id="yieldLossMonthLabel"></span></h2><span class="rule"></span></div>
+    <div class="grid-2b" style="margin-bottom:18px;">
+      <div class="card">
+        <h3><span class="dot tl"></span> Thonglor</h3>
+        <div style="max-height:340px; overflow:auto;"><table id="yieldLossTL"></table></div>
+      </div>
+      <div class="card">
+        <h3><span class="dot ctw"></span> CTW</h3>
+        <div style="max-height:340px; overflow:auto;"><table id="yieldLossCTW"></table></div>
+      </div>
+    </div>
+
+    <div class="section-title"><span class="num">05</span><h2>Fish Yield &amp; Cost Gap — <span id="yieldMonthLabel"></span></h2><span class="rule"></span></div>
     <div class="top-n-tabs" id="costGapModeTabs">
       <button class="top-n-btn active" data-mode="full">ทั้งเดือน</button>
       <button class="top-n-btn" data-mode="exclend">ไม่รวมปลายเดือน</button>
@@ -300,9 +313,9 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <h3><span class="dot tl"></span> Thonglor <span style="margin-left:auto;"><span class="badge-score" id="scoreTL"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapTL"></span> ฿ <span class="pct-gap-tag" id="pctGapTL"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldTL"></table></div>
-        <h3 style="margin-top:20px;">West — Thonglor <span class="pct-gap-tag neg" id="westValueTL" style="margin-left:8px;"></span></h3>
+        <h3 style="margin-top:20px;">Waste — Thonglor <span class="pct-gap-tag neg" id="westValueTL" style="margin-left:8px;"></span></h3>
         <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer; margin-bottom:6px;">
-          <input type="checkbox" class="excludeSauceChk" data-pair="TL"> ไม่รวมหมวด SAUCE / Side Dish / RICE ในตาราง West / มูลค่ารวมที่เสียไป
+          <input type="checkbox" class="excludeSauceChk" data-pair="TL"> ไม่รวมหมวด SAUCE / Side Dish / RICE ในตาราง Waste / มูลค่ารวมที่เสียไป
         </label>
         <div class="raw-note" id="westDiagTL" style="margin-bottom:6px;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
@@ -321,9 +334,9 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
         <h3><span class="dot ctw"></span> CTW <span style="margin-left:auto;"><span class="badge-score" id="scoreCTW"></span></span></h3>
         <div style="margin-bottom:10px;">Cost Gap รวม: <span class="gap-value" id="gapCTW"></span> ฿ <span class="pct-gap-tag" id="pctGapCTW"></span></div>
         <div style="max-height:340px; overflow:auto;"><table id="tableYieldCTW"></table></div>
-        <h3 style="margin-top:20px;">West — CTW <span class="pct-gap-tag neg" id="westValueCTW" style="margin-left:8px;"></span></h3>
+        <h3 style="margin-top:20px;">Waste — CTW <span class="pct-gap-tag neg" id="westValueCTW" style="margin-left:8px;"></span></h3>
         <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; cursor:pointer; margin-bottom:6px;">
-          <input type="checkbox" class="excludeSauceChk" data-pair="CTW"> ไม่รวมหมวด SAUCE / Side Dish / RICE ในตาราง West / มูลค่ารวมที่เสียไป
+          <input type="checkbox" class="excludeSauceChk" data-pair="CTW"> ไม่รวมหมวด SAUCE / Side Dish / RICE ในตาราง Waste / มูลค่ารวมที่เสียไป
         </label>
         <div class="raw-note" id="westDiagCTW" style="margin-bottom:6px;"></div>
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">
@@ -344,7 +357,7 @@ footer{text-align:center; font-size:11.5px; color:var(--ink-soft); margin-top:40
       <div class="card"><h3><span class="dot ctw"></span> CTW <span class="dot tl" style="margin-left:10px"></span> Thonglor — แนวโน้ม Cost Gap (บาท) รายเดือน</h3><div class="chart-box"><canvas id="chartGapTrend"></canvas></div></div>
     </div>
 
-    <div class="section-title"><span class="num">05</span><h2>รายการสินค้าทั้งหมด — <span id="itemsMonthLabel"></span></h2><span class="rule"></span></div>
+    <div class="section-title"><span class="num">06</span><h2>รายการสินค้าทั้งหมด — <span id="itemsMonthLabel"></span></h2><span class="rule"></span></div>
     <div class="card">
       <div class="filter-bar">
         <select id="branchFilter">
@@ -789,10 +802,10 @@ let topNFilter = 'all';
 let alcTypeFilter = 'all';
 function buildTopItems(m){
   document.getElementById('topMonthLabel').textContent = MON_LABELS[m] + ' 2026';
-  rankList('rankAlcTL', filterAlcType(DATA.top_alc_by_month.Thonglor[m]||[]), 'tl');
-  rankList('rankAlcCTW', filterAlcType(DATA.top_alc_by_month.CTW[m]||[]), 'ctw');
-  rankList('rankBevTL', DATA.top_bev_by_month.Thonglor[m]||[], 'tl');
-  rankList('rankBevCTW', DATA.top_bev_by_month.CTW[m]||[], 'ctw');
+  rankList('rankAlcTL', filterAlcType(DATA.top_alc_by_month.Thonglor[m]||[]), 'tl', DATA.top_alc_by_month.Thonglor[m-1]||[]);
+  rankList('rankAlcCTW', filterAlcType(DATA.top_alc_by_month.CTW[m]||[]), 'ctw', DATA.top_alc_by_month.CTW[m-1]||[]);
+  rankList('rankBevTL', DATA.top_bev_by_month.Thonglor[m]||[], 'tl', DATA.top_bev_by_month.Thonglor[m-1]||[]);
+  rankList('rankBevCTW', DATA.top_bev_by_month.CTW[m]||[], 'ctw', DATA.top_bev_by_month.CTW[m-1]||[]);
   const diagEl = document.getElementById('categoryDiagNote');
   const diag = window.__categoryDiag || {CTW:[], Thonglor:[]};
   const fmtPairs = arr => arr.slice(0,8).map(([code,count])=>`"${code}"×${count}`).join(', ');
@@ -815,10 +828,12 @@ function filterAlcType(rows){
   if(alcTypeFilter==='all') return rows;
   return rows.filter(r=>r[2]===alcTypeFilter);
 }
-function rankList(id, allRows, colorClass){
+function rankList(id, allRows, colorClass, prevRows){
   const total = allRows.reduce((s,r)=>s+r[1], 0) || 1;
   const rows = topNFilter==='all' ? allRows : allRows.slice(0, parseInt(topNFilter));
   if(!rows.length){ document.getElementById(id).innerHTML = '<div class="empty-note">ไม่มีข้อมูลเดือนนี้</div>'; return; }
+  const prevMap = {};
+  (prevRows||[]).forEach(r=>{ prevMap[normalizeItemName(r[0])] = r[1]; });
   const pctList = rows.map(r=> r[1]/total*100);
   const maxPct = Math.max(...pctList);
   const scale = maxPct + 10; // full-width of the bar track = max item's % + 10pp headroom (not labeled anywhere)
@@ -826,10 +841,16 @@ function rankList(id, allRows, colorClass){
     const pct = pctList[i];
     const pctLabel = pct.toFixed(1);
     const barWidth = (pct/scale*100).toFixed(1);
+    const prevQty = prevMap[normalizeItemName(r[0])];
+    let momHtml = '';
+    if(prevQty!==undefined && prevQty>0){
+      const mom = (r[1]-prevQty)/prevQty*100;
+      momHtml = `<span class="rank-mom ${mom>=0?'chg-up':'chg-down'}">${mom>=0?'+':''}${mom.toFixed(1)}%</span>`;
+    }
     return `<div class="rank-bar-row">
       <div class="rank-name">${r[0]}</div>
       <div class="rank-track"><div class="rank-fill ${colorClass}" style="width:${barWidth}%"></div><span class="rank-pct-onbar" style="left:calc(${barWidth}% + 4px);">${pctLabel}%</span></div>
-      <div class="rank-qty">${fmtNum(r[1])}</div>
+      <div class="rank-qty">${fmtNum(r[1])} ${momHtml}</div>
     </div>`;
   }).join('');
 }
@@ -903,6 +924,20 @@ function adjustYieldItems(items, branch, month, mode){
     return [name, theoretical, adjActual, adjWeightGap, adjCostGap, unit, updated, unitCost];
   });
   return {items:adjItems, costGapTotal};
+}
+function yieldLossTable(id, rows){
+  const headers = [
+    {label:'รายการ', key:r=>r[0], numeric:false},
+    {label:'วันที่', key:r=>r[1], numeric:false},
+    {label:'Yield', key:r=>r[2], numeric:true},
+  ];
+  const formatRow = r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="num-cell">${fmtNum(r[2])}</td></tr>`;
+  renderSortableTable(id, headers, rows, formatRow, 1, 'desc');
+}
+function buildYieldLoss(m){
+  document.getElementById('yieldLossMonthLabel').textContent = MON_LABELS[m] + ' 2026';
+  yieldLossTable('yieldLossTL', DATA.yield_loss_by_month.Thonglor[m] || []);
+  yieldLossTable('yieldLossCTW', DATA.yield_loss_by_month.CTW[m] || []);
 }
 function buildYield(m){
   document.getElementById('yieldMonthLabel').textContent = MON_LABELS[m] + ' 2026';
@@ -1059,6 +1094,7 @@ function renderAll(){
   buildKPI(currentMonth);
   buildRolls(currentMonth);
   buildTopItems(currentMonth);
+  buildYieldLoss(currentMonth);
   buildYield(currentMonth);
   buildSubstitution();
   renderItemTable();
@@ -1312,6 +1348,23 @@ function buildRemainingWeightByMonth(rows){
       const list = sumByItem(matches);
       out.CTW[m] = list;
       out.Thonglor[m] = list;
+    }
+  }
+  return out;
+}
+// Yield Loss detail table: EVERY entry within the selected month (not just the last-day snapshot
+// used for "remaining weight"), so the raw YieldLoss Data sheet is fully browsable per month.
+function buildYieldLossByMonth(rows){
+  const hasBranch = rows.some(r=>r.branch);
+  const out = {CTW:{}, Thonglor:{}};
+  for(let m=1;m<=12;m++){
+    const matches = rows.filter(r=>r.date.mo===m).map(r=>[r.item, `${String(r.date.d).padStart(2,'0')}/${String(r.date.mo).padStart(2,'0')}/${r.date.y}`, r.weight, r.branch||'']);
+    if(hasBranch){
+      out.CTW[m] = matches.filter(r=>r[3]==='CTW');
+      out.Thonglor[m] = matches.filter(r=>r[3]==='Thonglor');
+    } else {
+      out.CTW[m] = matches;
+      out.Thonglor[m] = matches;
     }
   }
   return out;
@@ -1635,6 +1688,7 @@ async function loadAllDataAndInit(silent=false){
     // share_shift_analysis is no longer precomputed here — buildSubstitution() computes it fresh
     // on demand since baseline months and target month are now user-configurable (section 02b).
     const remaining_weight_by_month = buildRemainingWeightByMonth(yieldLoss);
+    const yield_loss_by_month = buildYieldLossByMonth(yieldLoss);
 
     DATA = {
       monthly_sales, set_qty_trend, roll_table_by_month, top_alc_by_month, top_bev_by_month,
@@ -1642,6 +1696,7 @@ async function loadAllDataAndInit(silent=false){
       west_by_month,
       menu_data_raw: menuRaw,
       remaining_weight_by_month,
+      yield_loss_by_month,
     };
 
     // Detect the latest month that actually has sales data (instead of hardcoding June) —
